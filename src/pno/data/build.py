@@ -53,15 +53,9 @@ def load_keep(path: str | None, reg) -> list[str]:
         return keep
     print(f"[build] WARNING: no competence keep-list at {path!r}; using every transform that passes the "
           "content-sensitivity check (fine for smoke tests, not for the study)")
-    from pno.catalog.base import sensitivity
-    from pno.data.conflicts import _CLASS_PROBES, unit_sep
+    from pno.catalog.base import sensitive_names
 
-    keep = []
-    for t in reg:
-        probes = [unit_sep(t.unit).join(_CLASS_PROBES[i:i + 2]) for i in range(3)] * 4
-        if sensitivity(t, probes) >= 0.95:
-            keep.append(t.name)
-    return keep
+    return sensitive_names(reg)
 
 
 class Builder:

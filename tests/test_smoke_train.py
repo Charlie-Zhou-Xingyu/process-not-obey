@@ -76,6 +76,7 @@ def test_train_merge_generate(tiny, cfg_path, workdir, toy_alpaca):
     merged_dir = workdir / "merged"
     info = merge.export_merged(tiny, str(run_dir), str(merged_dir))
     assert info["replaced"] > 0 and info["skipped"] in ([], ["lm_head.weight"])
+    assert info["verify_max_abs_logit_diff"] < 1e-3 and info["verify_same_top1"]
     tok = AutoTokenizer.from_pretrained(merged_dir)
     msgs = Prompt("Uppercase the input.", "hello there").messages()
     assert tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True, enable_thinking=False) == \
@@ -88,8 +89,7 @@ def test_train_merge_generate(tiny, cfg_path, workdir, toy_alpaca):
         base_logits = base(**ids).logits[0, -1]
         peft_logits = PeftModel.from_pretrained(base, str(run_dir))(**ids).logits[0, -1]
         merged_logits = AutoModelForCausalLM.from_pretrained(merged_dir, dtype=torch.float32)(**ids).logits[0, -1]
-    # tiny checkpoints are stored in bf16, so allow rounding noise
-    assert torch.allclose(peft_logits, merged_logits, atol=5e-2)
+    assert torch.allclose(peft_logits, merged_logits, atol=1e-3)           # float32 merge is near exact
     assert not torch.allclose(peft_logits, base_logits, atol=1e-4)         # the adapter did change the model
 
     gen = HFGenerator(str(merged_dir), device="cpu", batch_size=4)

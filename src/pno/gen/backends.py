@@ -112,8 +112,9 @@ class VLLMGenerator:
         limit = self.max_model_len - cfg.max_new_tokens
         too_long = sum(len(x) > limit for x in ids)
         if too_long:
-            print(f"[vllm] warning: {too_long} prompts exceed {limit} tokens; keeping their last {limit} tokens")
-        ids = [x[-limit:] if len(x) > limit else x for x in ids]
+            print(f"[vllm] warning: {too_long} prompts exceed {limit} tokens; cutting tokens out of their middle")
+        head = limit // 2      # keeps the trusted instruction at the start and the generation prompt at the end
+        ids = [x[:head] + x[len(x) - (limit - head):] if len(x) > limit else x for x in ids]
         sp = SamplingParams(temperature=cfg.temperature, top_p=cfg.top_p, max_tokens=cfg.max_new_tokens,
                             seed=cfg.seed, skip_special_tokens=True)
         outs = self.llm.generate([TokensPrompt(prompt_token_ids=x) for x in ids], sp, use_tqdm=True)

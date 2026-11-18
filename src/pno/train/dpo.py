@@ -70,6 +70,9 @@ def main(argv=None):
     device = pick_device(args.device)
     on_cuda = device == "cuda"
 
+    if on_cuda and torch.cuda.device_count() > 1:
+        raise SystemExit(f"{torch.cuda.device_count()} GPUs are visible. Batch size and step count assume one; "
+                         "set CUDA_VISIBLE_DEVICES to a single device.")
     rows = read_jsonl(args.train)
     if args.limit:
         rows = rows[: args.limit]

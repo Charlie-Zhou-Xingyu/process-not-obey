@@ -79,7 +79,7 @@ def train(cfg: dict, seeds: list[int], conds: list[str], dry: bool) -> None:
 
 
 def evaluate_one(cfg: dict, name: str, model: str, renderer: str, benches: list[str], dry: bool,
-                 tokenizer: str | None = None, limit: int | None = None) -> None:
+                 tokenizer: str | None = None, limit: int | None = None, dtype: str | None = None) -> None:
     out = eval_dir(name)
     todo_gen = [b for b in benches if not (out / f"{b}.jsonl").exists()]
     todo_score = [b for b in benches if not (out / f"{b}_summary.json").exists()]
@@ -89,6 +89,8 @@ def evaluate_one(cfg: dict, name: str, model: str, renderer: str, benches: list[
                "--benchmarks", *todo_gen, "--no_score"]
         if tokenizer:
             cmd += ["--tokenizer", tokenizer]
+        if dtype:
+            cmd += ["--dtype", dtype]
         sh(cmd, dry)
     if todo_score:
         sh([PY, "-m", "pno.eval.run", *common, "--benchmarks", *todo_score, "--score_only"], dry)
@@ -112,14 +114,15 @@ def evaluate(cfg: dict, seeds: list[int], conds: list[str], models: list[str], b
                     continue
                 sh([PY, "-m", "pno.train.merge", "--base", cfg["base_model"], "--adapter", p["run"],
                     "--out", p["merged"]], dry)       # merged weights were cleaned up earlier; rebuild
-            evaluate_one(cfg, name, str(p["merged"]), cfg["renderer"], b, dry, limit=limit)
+            evaluate_one(cfg, name, str(p["merged"]), cfg["renderer"], b, dry, limit=limit,
+                         dtype=cfg["eval"].get("dtype_trained"))
             if cleanup_merged and not dry and all((eval_dir(name) / f"{x}.jsonl").exists() for x in b):
                 for f in p["merged"].glob("*.safetensors"):
                     f.unlink()                        # ~4.6 GB per run; the adapter in runs/ is kept
     for m in models:
         spec = cfg["models"][m]
         b = [x for x in benchmarks_for(cfg, None, benches) if not (x == "conflict" and spec["renderer"] != "chatml")]
-        evaluate_one(cfg, m, spec["path"], spec["renderer"], b, dry, spec.get("tokenizer"), limit)
+        evaluate_one(cfg, m, spec["path"], spec["renderer"], b, dry, spec.get("tokenizer"), limit, spec.get("dtype"))
 
 
 # ---------------------------------------------------------------- status and gates

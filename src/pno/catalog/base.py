@@ -16,7 +16,7 @@ sentence and dropping it cannot be told apart. ``sensitivity`` checks this empir
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable
 
 # Noun phrase substituted for the catalog's "user message" (templates carry their own article).
@@ -46,9 +46,7 @@ class Transform:
     category: str = "misc"
     unit: str = "text"                  # "text" (sentences joined by spaces) or "lines"
     source: str = "goalgoal"            # "goalgoal" = catalog of [8]; "extra" = our additions
-    content_sensitive: bool = True
     notes: str = ""
-    aliases: tuple[str, ...] = field(default=())
 
     def instruction(self, target: str) -> str:
         return self.template.replace("{target}", TARGET_PHRASES[target])
@@ -88,10 +86,8 @@ class Registry:
     def __len__(self):
         return len(self._items)
 
-    def names(self, source: str | None = None, content_sensitive: bool | None = None) -> list[str]:
-        return [t.name for t in self._items.values()
-                if (source is None or t.source == source)
-                and (content_sensitive is None or t.content_sensitive == content_sensitive)]
+    def names(self, source: str | None = None) -> list[str]:
+        return [t.name for t in self._items.values() if source is None or t.source == source]
 
 
 PROBE_SENTENCES = (
@@ -115,3 +111,24 @@ def sensitivity(t: Transform, carriers: list[str], extra_sentences: tuple[str, .
     diff = sum(t.apply(c + sep + extra_sentences[i % len(extra_sentences)]) != t.apply(c)
                for i, c in enumerate(carriers))
     return diff / len(carriers)
+
+
+_FALLBACK_CARRIERS = (
+    "The harbor was quiet before the first ferry arrived.",
+    "Two engineers measured the bridge again in March.",
+    "A small bakery opened near the old station last year.",
+    "Most visitors leave the island before the evening tide.",
+    "The library keeps its oldest maps in a locked room.",
+    "Rain delayed the harvest by almost two weeks.",
+)
+
+
+def sensitive_names(reg: Registry, sentences: tuple[str, ...] | list[str] = _FALLBACK_CARRIERS,
+                    threshold: float = 0.95, n: int = 60) -> list[str]:
+    """Transforms whose output changes when a sentence is added (the pool usable as T_u)."""
+    import random
+
+    rng = random.Random(0)
+    probes = {"text": [" ".join(rng.sample(list(sentences), 2)) for _ in range(n)],
+              "lines": ["\n".join(rng.sample(list(sentences), 3)) for _ in range(n)]}
+    return [t.name for t in reg if sensitivity(t, probes[t.unit]) >= threshold]

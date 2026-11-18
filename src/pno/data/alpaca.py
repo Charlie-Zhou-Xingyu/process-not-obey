@@ -18,6 +18,17 @@ ALPACA_HF_ID = "yahma/alpaca-cleaned"
 
 _ASCII_OK = re.compile(r"^[A-Za-z0-9 ,.;:'\"!?()\-%$&/]+$")
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
+_ABBREV_END = re.compile(r"\b(dr|mr|mrs|ms|prof|st|vs|etc|inc|ltd|jr|sr|no|fig|e\.g|i\.e|u\.s|a\.m|p\.m|[a-z])\.$", re.I)
+
+
+def one_sentence(s: str) -> bool:
+    """True if the sentence transforms (pno.catalog.base.split_sentences) see exactly one
+    sentence and it does not end in an abbreviation (a fragment such as "Call Dr.")."""
+    from pno.catalog.base import split_sentences
+
+    return split_sentences(s) == [s] and not _ABBREV_END.search(s)
+
+
 _ASSISTANT_TALK = re.compile(r"\b(AI|language model|assistant|I'm sorry|I am sorry|I cannot|I can't|I am unable|"
                              r"I'm unable|I apologize)\b")
 
@@ -81,7 +92,7 @@ def carrier_sentences(rows: list[AlpacaRow], min_words: int = 6, max_words: int 
                     continue
                 if not _ASCII_OK.match(s) or is_instruction_like(s) or "you" in s.lower().split():
                     continue
-                if _ASSISTANT_TALK.search(s):
+                if _ASSISTANT_TALK.search(s) or not one_sentence(s):
                     continue
                 if s not in seen:
                     seen.add(s)
@@ -98,7 +109,7 @@ def single_sentence_instructions(rows: list[AlpacaRow], min_words: int = 4, max_
         ins = r.instruction
         if r.input or ins[-1:] not in ".?" or "\n" in ins or not _ASCII_OK.match(ins):
             continue
-        if len(_SENT_SPLIT.split(ins)) != 1 or bad.search(ins):
+        if len(_SENT_SPLIT.split(ins)) != 1 or bad.search(ins) or not one_sentence(ins):
             continue
         if min_words <= len(ins.split()) <= max_words and is_instruction_like(ins):
             out.append(ins)
