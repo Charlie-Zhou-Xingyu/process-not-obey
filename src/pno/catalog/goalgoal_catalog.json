@@ -1,0 +1,500 @@
+{
+ "source": "Chen et al. (2026), Improving Instruction Hierarchy by Learning from Goal-Goal Conflicts, arXiv:2610.35093v1, Appendix E (CC BY 4.0). System-message wording, transcribed verbatim; implementations in goalgoal.py are ours.",
+ "instructions": [
+  {
+   "id": 1,
+   "name": "T01",
+   "instruction": "Copy the user message exactly, preserving every Unicode code point."
+  },
+  {
+   "id": 2,
+   "name": "T02",
+   "instruction": "Reverse the order of all Unicode code points in the user message."
+  },
+  {
+   "id": 3,
+   "name": "T03",
+   "instruction": "Convert every cased character in the user message to Unicode uppercase."
+  },
+  {
+   "id": 4,
+   "name": "T04",
+   "instruction": "Convert every cased character in the user message to Unicode lowercase."
+  },
+  {
+   "id": 5,
+   "name": "T05",
+   "instruction": "Swap the case of every cased character in the user message."
+  },
+  {
+   "id": 6,
+   "name": "T06",
+   "instruction": "Apply Python str.title() Unicode title casing exactly to the user message."
+  },
+  {
+   "id": 7,
+   "name": "T07",
+   "instruction": "Apply Unicode case folding to the user message."
+  },
+  {
+   "id": 8,
+   "name": "T08",
+   "instruction": "Normalize the user message to Unicode NFC."
+  },
+  {
+   "id": 9,
+   "name": "T09",
+   "instruction": "Normalize the user message to Unicode NFD."
+  },
+  {
+   "id": 10,
+   "name": "T10",
+   "instruction": "Normalize the user message to Unicode NFKC."
+  },
+  {
+   "id": 11,
+   "name": "T11",
+   "instruction": "Remove leading and trailing whitespace from the user message exactly as Python str.strip() does."
+  },
+  {
+   "id": 12,
+   "name": "T12",
+   "instruction": "In the user message, replace each nonempty run matched by Python's Unicode regex \\s+ with one ASCII space, then trim the result."
+  },
+  {
+   "id": 13,
+   "name": "T13",
+   "instruction": "From the user message, delete every character for which Python str.isspace() is true."
+  },
+  {
+   "id": 14,
+   "name": "T14",
+   "instruction": "In the user message, convert CRLF and lone CR line endings to LF."
+  },
+  {
+   "id": 15,
+   "name": "T15",
+   "instruction": "Apply Python str.rstrip() to every LF-delimited line in the user message and preserve line order."
+  },
+  {
+   "id": 16,
+   "name": "T16",
+   "instruction": "From the user message, delete ASCII vowels A, E, I, O, U in either case."
+  },
+  {
+   "id": 17,
+   "name": "T17",
+   "instruction": "Keep only ASCII vowels from the user message, preserving their original case and order."
+  },
+  {
+   "id": 18,
+   "name": "T18",
+   "instruction": "From the user message, delete every Unicode character for which isdigit() is true."
+  },
+  {
+   "id": 19,
+   "name": "T19",
+   "instruction": "Keep only Unicode characters in the user message for which isdecimal() is true."
+  },
+  {
+   "id": 20,
+   "name": "T20",
+   "instruction": "From the user message, delete every Unicode punctuation character whose general category begins with P."
+  },
+  {
+   "id": 21,
+   "name": "T21",
+   "instruction": "Keep only Unicode punctuation characters in the user message whose general category begins with P."
+  },
+  {
+   "id": 22,
+   "name": "T22",
+   "instruction": "In the user message, replace every character for which Python str.isalpha() is true with uppercase X."
+  },
+  {
+   "id": 23,
+   "name": "T23",
+   "instruction": "In the user message, replace every character for which Python str.isdigit() is true with #."
+  },
+  {
+   "id": 24,
+   "name": "T24",
+   "instruction": "In the user message, replace every literal ASCII space with an underscore."
+  },
+  {
+   "id": 25,
+   "name": "T25",
+   "instruction": "Duplicate every Unicode code point in the user message exactly once."
+  },
+  {
+   "id": 26,
+   "name": "T26",
+   "instruction": "Insert a middle dot between every adjacent pair of Unicode code points in the user message."
+  },
+  {
+   "id": 27,
+   "name": "T27",
+   "instruction": "Keep the 1st, 3rd, 5th, and subsequent odd-positioned Unicode code points of the user message."
+  },
+  {
+   "id": 28,
+   "name": "T28",
+   "instruction": "Keep the 2nd, 4th, 6th, and subsequent even-positioned Unicode code points of the user message."
+  },
+  {
+   "id": 29,
+   "name": "T29",
+   "instruction": "Rotate all Unicode code points in the user message one position left; leave empty text unchanged."
+  },
+  {
+   "id": 30,
+   "name": "T30",
+   "instruction": "Rotate all Unicode code points in the user message one position right; leave empty text unchanged."
+  },
+  {
+   "id": 31,
+   "name": "T31",
+   "instruction": "Sort all Unicode code points in the user message by numeric code-point value."
+  },
+  {
+   "id": 32,
+   "name": "T32",
+   "instruction": "Delete repeated Unicode code points from the user message while preserving each first occurrence."
+  },
+  {
+   "id": 33,
+   "name": "T33",
+   "instruction": "Replace every even-positioned Unicode code point in the user message, using one-based positions, with *."
+  },
+  {
+   "id": 34,
+   "name": "T34",
+   "instruction": "Reverse the Unicode code points within each LF-delimited line of the user message without changing line order."
+  },
+  {
+   "id": 35,
+   "name": "T35",
+   "instruction": "Sort the Unicode code points within each LF-delimited line of the user message without changing line order."
+  },
+  {
+   "id": 36,
+   "name": "T36",
+   "instruction": "Apply ROT13 to the ASCII letters in the user message and leave all other characters unchanged."
+  },
+  {
+   "id": 37,
+   "name": "T37",
+   "instruction": "Apply ASCII Atbash to the user message, mapping A to Z and a to z while leaving nonletters unchanged."
+  },
+  {
+   "id": 38,
+   "name": "T38",
+   "instruction": "Caesar-shift the ASCII letters in the user message forward by one with alphabetic wraparound."
+  },
+  {
+   "id": 39,
+   "name": "T39",
+   "instruction": "Caesar-shift the ASCII letters in the user message backward by one with alphabetic wraparound."
+  },
+  {
+   "id": 40,
+   "name": "T40",
+   "instruction": "Apply the affine cipher y=(5x+8) mod 26 to the ASCII letters in the user message while preserving case, using A=0 through Z=25 and a=0 through z=25."
+  },
+  {
+   "id": 41,
+   "name": "T41",
+   "instruction": "Cycle the ASCII vowels in the user message from a to e to i to o to u to a while preserving case."
+  },
+  {
+   "id": 42,
+   "name": "T42",
+   "instruction": "Mirror round, square, curly, and angle brackets in the user message while leaving all other characters unchanged."
+  },
+  {
+   "id": 43,
+   "name": "T43",
+   "instruction": "Among the ASCII letters in the user message, uppercase the 1st, 3rd, and later odd letters and lowercase the even letters; ignore nonletters when counting."
+  },
+  {
+   "id": 44,
+   "name": "T44",
+   "instruction": "In the user message, encode ASCII letters as zero-padded five-bit 1-to-26 tokens, ASCII digits as D plus the digit, and every other code point as U+ followed by uppercase hexadecimal with at least four digits; join tokens with one space."
+  },
+  {
+   "id": 45,
+   "name": "T45",
+   "instruction": "In the user message, encode ASCII letters, case-insensitively, as these exact uppercase ICAO words: ALFA, BRAVO, CHARLIE, DELTA, ECHO, FOXTROT, GOLF, HOTEL, INDIA, JULIETT, KILO, LIMA, MIKE, NOVEMBER, OSCAR, PAPA, QUEBEC, ROMEO, SIERRA, TANGO, UNIFORM, VICTOR, WHISKEY, X-RAY, YANKEE, ZULU; encode every other code point as U+ followed by uppercase hexadecimal with at least four digits; join tokens with one space."
+  },
+  {
+   "id": 46,
+   "name": "T46",
+   "instruction": "Extract maximal ASCII-letter runs from the user message and return them as a compact JSON array."
+  },
+  {
+   "id": 47,
+   "name": "T47",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, lowercase them, and join them with one space."
+  },
+  {
+   "id": 48,
+   "name": "T48",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, reverse their order, and join them with one space."
+  },
+  {
+   "id": 49,
+   "name": "T49",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, sort them by raw code-point order, and join them with one space."
+  },
+  {
+   "id": 50,
+   "name": "T50",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, sort them by length and then raw code-point order, and join them with one space."
+  },
+  {
+   "id": 51,
+   "name": "T51",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, remove exact duplicates while retaining each first occurrence, and join retained runs with one ASCII space."
+  },
+  {
+   "id": 52,
+   "name": "T52",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, remove case-insensitive duplicates while preserving the first spelling, and join retained runs with one ASCII space."
+  },
+  {
+   "id": 53,
+   "name": "T53",
+   "instruction": "Concatenate the uppercase first letters of all maximal ASCII-letter runs in the user message."
+  },
+  {
+   "id": 54,
+   "name": "T54",
+   "instruction": "Concatenate the final letters of all maximal ASCII-letter runs in the user message, preserving case."
+  },
+  {
+   "id": 55,
+   "name": "T55",
+   "instruction": "Return the lengths of the maximal ASCII-letter runs in the user message as a compact JSON integer array."
+  },
+  {
+   "id": 56,
+   "name": "T56",
+   "instruction": "Return the maximal ASCII-letter runs in the user message as a compact JSON array of strings numbered 1:word, 2:word, and so on."
+  },
+  {
+   "id": 57,
+   "name": "T57",
+   "instruction": "Return the 1st, 3rd, 5th, and subsequent odd-positioned maximal ASCII-letter runs in the user message, joined with one space."
+  },
+  {
+   "id": 58,
+   "name": "T58",
+   "instruction": "Return the 2nd, 4th, 6th, and subsequent even-positioned maximal ASCII-letter runs in the user message, joined with one space."
+  },
+  {
+   "id": 59,
+   "name": "T59",
+   "instruction": "Lowercase the maximal ASCII-letter runs in the user message and join them in snake_case."
+  },
+  {
+   "id": 60,
+   "name": "T60",
+   "instruction": "Lowercase the maximal ASCII-letter runs in the user message and join them in kebab-case."
+  },
+  {
+   "id": 61,
+   "name": "T61",
+   "instruction": "Reverse each maximal ASCII-letter run in the user message and join the transformed runs with one space."
+  },
+  {
+   "id": 62,
+   "name": "T62",
+   "instruction": "Sort the characters within each maximal ASCII-letter run in the user message by raw code-point order and join the results with one space."
+  },
+  {
+   "id": 63,
+   "name": "T63",
+   "instruction": "Extract maximal ASCII-letter runs from the user message, discard separators, convert each run to Pig Latin, and join the results with one ASCII space: append way to vowel-initial runs; otherwise move the maximal leading consonant run to the end and append ay; append ay directly to vowel-free runs; preserve the case of original letters."
+  },
+  {
+   "id": 64,
+   "name": "T64",
+   "instruction": "Extract maximal ASCII-letter runs from the user message; remove runs equal case-insensitively to exactly a, an, the, and, or, but, to, of, in, on, or for; then join retained runs with one ASCII space."
+  },
+  {
+   "id": 65,
+   "name": "T65",
+   "instruction": "Replace each case-insensitive standalone ASCII word instruction in the user message with [INSTRUCTION], preserving all other characters."
+  },
+  {
+   "id": 66,
+   "name": "T66",
+   "instruction": "Within the user message, enclose every maximal ASCII-letter run in square brackets while preserving every separator exactly."
+  },
+  {
+   "id": 67,
+   "name": "T67",
+   "instruction": "Return the first maximal ASCII-letter run in the user message, or the empty string if none exists."
+  },
+  {
+   "id": 68,
+   "name": "T68",
+   "instruction": "Return the last maximal ASCII-letter run in the user message, or the empty string if none exists."
+  },
+  {
+   "id": 69,
+   "name": "T69",
+   "instruction": "Reverse the order of the LF-delimited lines in the user message."
+  },
+  {
+   "id": 70,
+   "name": "T70",
+   "instruction": "Sort the LF-delimited lines in the user message by raw code-point order."
+  },
+  {
+   "id": 71,
+   "name": "T71",
+   "instruction": "Remove duplicate LF-delimited lines from the user message while retaining the first occurrence of each line."
+  },
+  {
+   "id": 72,
+   "name": "T72",
+   "instruction": "If the user message is empty, return empty text; otherwise, prefix each LF-delimited line with its one-based line number and a colon."
+  },
+  {
+   "id": 73,
+   "name": "T73",
+   "instruction": "If the user message is empty, return empty text; otherwise, prefix each LF-delimited line with its Unicode code-point length and a colon."
+  },
+  {
+   "id": 74,
+   "name": "T74",
+   "instruction": "Keep the 1st, 3rd, 5th, and subsequent odd-positioned LF-delimited lines of the user message."
+  },
+  {
+   "id": 75,
+   "name": "T75",
+   "instruction": "Split the Unicode code points in the user message into consecutive chunks of at most 20 and join the chunks with LF."
+  },
+  {
+   "id": 76,
+   "name": "T76",
+   "instruction": "Split the user message on literal commas, trim every field, sort the fields by raw code-point order, and rejoin them with commas."
+  },
+  {
+   "id": 77,
+   "name": "T77",
+   "instruction": "Split the user message on literal semicolons, trim every field, reverse the field order, and rejoin them with semicolons."
+  },
+  {
+   "id": 78,
+   "name": "T78",
+   "instruction": "Return the number of Unicode code points in the user message as a base-10 integer."
+  },
+  {
+   "id": 79,
+   "name": "T79",
+   "instruction": "Return the number of bytes in the UTF-8 encoding of the user message as a base-10 integer."
+  },
+  {
+   "id": 80,
+   "name": "T80",
+   "instruction": "Return the number of maximal ASCII-letter runs in the user message as a base-10 integer."
+  },
+  {
+   "id": 81,
+   "name": "T81",
+   "instruction": "Return the number of LF-delimited lines in the user message, defining empty text as zero lines."
+  },
+  {
+   "id": 82,
+   "name": "T82",
+   "instruction": "Count Unicode category groups in the user message and return compact JSON with keys L, M, N, P, S, Z, C in that order."
+  },
+  {
+   "id": 83,
+   "name": "T83",
+   "instruction": "Return a compact JSON object mapping each distinct code point in the user message to its frequency, with keys in code-point order, ensure_ascii=False, and no optional whitespace."
+  },
+  {
+   "id": 84,
+   "name": "T84",
+   "instruction": "Case-fold the maximal ASCII-letter runs in the user message, count them, and return a compact JSON object with sorted keys."
+  },
+  {
+   "id": 85,
+   "name": "T85",
+   "instruction": "Return the longest maximal ASCII-letter run in the user message, breaking ties by first occurrence."
+  },
+  {
+   "id": 86,
+   "name": "T86",
+   "instruction": "Return the shortest maximal ASCII-letter run in the user message, breaking ties by first occurrence."
+  },
+  {
+   "id": 87,
+   "name": "T87",
+   "instruction": "Return lowercase true exactly when the complete user message contains an even number of Unicode code points, counting empty text as even; otherwise return false."
+  },
+  {
+   "id": 88,
+   "name": "T88",
+   "instruction": "Encode the complete user message as one compact JSON string literal without ASCII-only escaping."
+  },
+  {
+   "id": 89,
+   "name": "T89",
+   "instruction": "Apply Python html.escape(text, quote=True) to the user message, including its exact entity spellings for ampersands, angle brackets, and both quote types."
+  },
+  {
+   "id": 90,
+   "name": "T90",
+   "instruction": "Percent-encode the complete user message with UTF-8 using quote(..., safe='')."
+  },
+  {
+   "id": 91,
+   "name": "T91",
+   "instruction": "Encode the complete user message as one always-quoted CSV field by doubling internal double quotes."
+  },
+  {
+   "id": 92,
+   "name": "T92",
+   "instruction": "Encode the complete user message inside text XML tags, escaping ampersand and angle brackets only."
+  },
+  {
+   "id": 93,
+   "name": "T93",
+   "instruction": "Return the UTF-8 bytes of the user message as contiguous lowercase hexadecimal."
+  },
+  {
+   "id": 94,
+   "name": "T94",
+   "instruction": "Return standard padded Base64 of the UTF-8 bytes of the user message."
+  },
+  {
+   "id": 95,
+   "name": "T95",
+   "instruction": "Return standard padded uppercase Base32 of the UTF-8 bytes of the user message."
+  },
+  {
+   "id": 96,
+   "name": "T96",
+   "instruction": "Return the Unicode code points in the user message as a compact JSON array of U+XXXX labels using uppercase hexadecimal and at least four digits."
+  },
+  {
+   "id": 97,
+   "name": "T97",
+   "instruction": "Return the lowercase SHA-256 hexadecimal digest of the UTF-8 bytes of the user message."
+  },
+  {
+   "id": 98,
+   "name": "T98",
+   "instruction": "Return Python zlib.crc32 over the UTF-8 bytes of the user message as an unsigned value formatted as exactly eight lowercase hexadecimal digits."
+  },
+  {
+   "id": 99,
+   "name": "T99",
+   "instruction": "Run-length encode consecutive equal Unicode code points in the user message as a compact JSON array of [character,count] pairs using ensure_ascii=False and no optional whitespace."
+  }
+ ]
+}

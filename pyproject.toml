@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pno"
+version = "0.1.0"
+description = "Learning to Process, Not Obey: security-fidelity trade-offs in prompt-injection defense (CS182 project)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pyyaml",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+train = [
+    "torch>=2.6",
+    "transformers>=5.0",
+    "trl>=1.0",
+    "peft>=0.17",
+    "datasets>=3.0",
+    "accelerate>=1.0",
+    "safetensors",
+]
+eval = ["lm-eval[ifeval]>=0.4.8", "pandas"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs torch/transformers and a few minutes on CPU"]

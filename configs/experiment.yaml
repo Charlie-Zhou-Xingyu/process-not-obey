@@ -1,0 +1,100 @@
+# Single source of truth for the core study; every script reads this file.
+# Sources for each value are in docs/DESIGN.md. Reference numbers: [4] Meta-SecAlign,
+# [5] SecPO, [6] SecFid, [8] goal-goal conflicts, [9] SEP, [10] IFEval.
+
+base_model: Qwen/Qwen3.5-2B
+renderer: chatml            # Qwen3.5 ChatML, non-thinking, untrusted text in an "input" role
+
+seeds: [0, 1, 2]
+
+data:
+  pool_seed: 182
+  alpaca_cache: data/raw/alpaca_cleaned.jsonl
+  keep_file: outputs/competence/qwen3.5-2b/keep.json   # written by gate 1 (pno.eval.competence)
+  security_pairs: 2000
+  benign_pairs: 2000
+  oversample: 1.25                 # extra generation specs so filtering still leaves 2,000 pairs
+  injected_from: keep              # injected transforms come from the competent set ("keep") or all 113 ("all")
+  balance_behavior_classes: true   # sample transforms uniformly over distinct behaviors, not over instructions
+  carrier_sentences_text: [1, 2]   # carrier length for text-unit transforms (sentences)
+  carrier_lines: [2, 4]            # carrier length for line-unit transforms (lines)
+  injection_placement: {start: 0.45, end: 0.45, completion: 0.10}   # SecAlign++ scheme [4], all security data
+  max_target_chars: 1500
+  gen_max_new_tokens: 1024         # self-generated targets; replies that hit the limit are dropped
+  gen_temperature: 0.0             # [4] samples at 0.8; greedy keeps targets reproducible
+
+conditions:
+  C1_ignore_ordinary:   {security: ignore,   benign: ordinary}   # standard recipe (baseline)
+  C2_ignore_fidelity:   {security: ignore,   benign: fidelity}   # repair of [6], out-of-benchmark data
+  C3_process_ordinary:  {security: process,  benign: ordinary}   # effect of processing alone
+  C4_process_fidelity:  {security: process,  benign: fidelity}   # full proposed recipe
+  C5_target_ordinary:   {security: target,   benign: ordinary}   # target control (primary comparison vs C3)
+  C6_boundary_ordinary: {security: boundary, benign: ordinary}   # boundary control (system-user, recipe of [8])
+
+comparisons:               # linear contrasts over conditions, analysed with a paired item bootstrap
+  primary_process_vs_target: {C3_process_ordinary: 1, C5_target_ordinary: -1}
+  process_vs_ignore:         {C3_process_ordinary: 1, C1_ignore_ordinary: -1}
+  fidelity_vs_ordinary:      {C2_ignore_fidelity: 1, C1_ignore_ordinary: -1}
+  full_vs_baseline:          {C4_process_fidelity: 1, C1_ignore_ordinary: -1}
+  interaction_2x2:           {C4_process_fidelity: 1, C3_process_ordinary: -1, C2_ignore_fidelity: -1, C1_ignore_ordinary: 1}
+  user_data_vs_system_user:  {C3_process_ordinary: 1, C6_boundary_ordinary: -1}
+
+training:                  # settings of [8] (App. C), which match the Qwen runs of [4] and [5]
+  pairs_per_condition: 4000
+  epochs: 1
+  effective_batch_size: 64         # [8]: 1 pair x 8 devices x 8 accumulation; 4,000 pairs -> 63 updates
+  per_device_batch_size: 8
+  learning_rate: 1.6e-4
+  lr_scheduler_type: linear        # [8]: "warmup then decay"; [5] Qwen: linear
+  warmup_ratio: 0.03
+  max_grad_norm: 1.0               # [5] Qwen
+  beta: 0.1
+  loss_type: sigmoid
+  max_length: 2048
+  lora_r: 64
+  lora_alpha: 8                    # [8] "scaling coefficient 8"; [4]/[5] use r=64, alpha=8
+  lora_dropout: 0.1
+  # [8] adapts the q/k/v/o and MLP projections. In Qwen3.5 only every fourth layer has q/k/v/o
+  # (full attention); the Gated DeltaNet layers in between are adapted through their MLPs only.
+  lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  gradient_checkpointing: true
+  logging_steps: 5
+  report_to: []
+
+eval:
+  backend: vllm
+  max_model_len: 8192
+  secfid:
+    max_new_tokens: 2048           # gold outputs reach ~4.4k characters
+    scorer_device: auto            # "cpu" keeps the embedding scorer off the GPU
+  sep:
+    n_items: 2000                  # fixed random subset of the 9,160 examples (null = all); x6 attacks
+    subset_seed: 182
+    max_new_tokens: 1024
+    reference_file: data/generated/sep_reference.jsonl
+  transfer:
+    n_items: 2000
+    subset_seed: 183
+    max_new_tokens: 1024
+    seeds: [0]                     # proposal: one seed per condition
+    hf_dataset: Sizhe-Chen/Llama-3.1-8B-Instruct-SecPO-trainset
+    hf_file: preference_Llama-3.1-8B-Instruct_dpo_NaiveCompletion_randpos_synthetic_alpaca_optimized.json
+    max_wrapper_chars: 1500
+  ifeval:
+    max_new_tokens: 1280           # as in [4]
+  conflict:
+    n_per_type: 300
+    max_new_tokens: 512
+  bootstrap:
+    n_boot: 10000
+    alpha: 0.05
+  noninferiority_margin: 0.02      # security may drop by at most 2 points
+
+models:                    # evaluated but never trained
+  base_qwen35_2b:   {path: Qwen/Qwen3.5-2B, renderer: chatml}
+  # undefended Llama rendered with the Meta-SecAlign template (no default system turn), as in [4]
+  llama31_8b_instr: {path: meta-llama/Llama-3.1-8B-Instruct, renderer: hf,
+                     tokenizer: Sizhe-Chen/Llama-3.1-8B-Instruct-MetaSecAlign}
+  # the official facebook/Meta-SecAlign-8B adapter merged into the base (ungated)
+  meta_secalign_8b: {path: Sizhe-Chen/Llama-3.1-8B-Instruct-MetaSecAlign, renderer: hf}
+  secpo_llama31_8b: {path: Sizhe-Chen/Llama-3.1-8B-Instruct-SecPO, renderer: hf}
