@@ -13,7 +13,8 @@ process, so GPU memory is released between models.
 Two interpreters can be used when vLLM pins packages that clash with the training stack:
 ``PNO_GEN_PYTHON`` runs generation (competence, self-generated targets, evaluation
 outputs) and ``PNO_PYTHON`` runs everything else. Both default to the current interpreter.
-``PNO_BACKEND=hf`` switches generation from vLLM to plain transformers.
+``PNO_BACKEND=hf`` switches generation from vLLM to plain transformers, and
+``PNO_ADAPTER_MODE=merge`` evaluates merged checkpoints instead of run-time LoRA.
 """
 from __future__ import annotations
 
@@ -64,6 +65,28 @@ def benchmarks_for(cfg: dict, seed: int | None, requested: list[str] | None) -> 
 
 
 # ---------------------------------------------------------------- stages
+def adapter_mode(cfg: dict) -> str:
+    """How trained runs are served for evaluation:
+
+    * ``lora``  - base model + adapter applied at run time, as Meta-SecAlign evaluates its
+      adapters with vLLM (``enable_lora`` / ``LoRARequest``). No extra checkpoints.
+    * ``merge`` - a merged float32 copy of the base checkpoint (``pno.train.merge``), for
+      engines that cannot apply LoRA to this architecture.
+    """
+    mode = os.environ.get("PNO_ADAPTER_MODE", cfg["eval"].get("adapter_mode", "lora"))
+    if mode not in ("lora", "merge"):
+        raise SystemExit(f"eval.adapter_mode must be 'lora' or 'merge', got {mode!r}")
+    return mode
+
+
+def trained_dtype(cfg: dict) -> str | None:
+    return cfg["eval"].get("dtype_trained") if adapter_mode(cfg) == "merge" else None
+
+
+def merge_cmd(cfg: dict, p: dict) -> list:
+    return [PY, "-m", "pno.train.merge", "--base", cfg["base_model"], "--adapter", p["run"], "--out", p["merged"]]
+
+
 def train(cfg: dict, seeds: list[int], conds: list[str], dry: bool) -> None:
     for seed in seeds:
         for cond in conds:
@@ -73,13 +96,13 @@ def train(cfg: dict, seeds: list[int], conds: list[str], dry: bool) -> None:
             if not (p["run"] / "train_log.json").exists():
                 sh([PY, "-m", "pno.train.dpo", "--train", p["data"], "--model", cfg["base_model"],
                     "--out", p["run"], "--seed", seed, "--renderer", cfg["renderer"]], dry)
-            if not (p["merged"] / "pno_merge_info.json").exists():   # merged copy = drop-in model for vLLM
-                sh([PY, "-m", "pno.train.merge", "--base", cfg["base_model"], "--adapter", p["run"],
-                    "--out", p["merged"]], dry)
+            if adapter_mode(cfg) == "merge" and not (p["merged"] / "pno_merge_info.json").exists():
+                sh(merge_cmd(cfg, p), dry)
 
 
 def evaluate_one(cfg: dict, name: str, model: str, renderer: str, benches: list[str], dry: bool,
-                 tokenizer: str | None = None, limit: int | None = None, dtype: str | None = None) -> None:
+                 tokenizer: str | None = None, limit: int | None = None, dtype: str | None = None,
+                 adapter: str | None = None) -> None:
     out = eval_dir(name)
     todo_gen = [b for b in benches if not (out / f"{b}.jsonl").exists()]
     todo_score = [b for b in benches if not (out / f"{b}_summary.json").exists()]
@@ -87,6 +110,8 @@ def evaluate_one(cfg: dict, name: str, model: str, renderer: str, benches: list[
     if todo_gen:
         cmd = [GEN_PY, "-m", "pno.eval.run", *common, "--model", model, "--backend", backend(cfg),
                "--benchmarks", *todo_gen, "--no_score"]
+        if adapter:
+            cmd += ["--adapter", adapter]
         if tokenizer:
             cmd += ["--tokenizer", tokenizer]
         if dtype:
@@ -102,27 +127,31 @@ def has_weights(d: Path) -> bool:
 
 def evaluate(cfg: dict, seeds: list[int], conds: list[str], models: list[str], benches: list[str] | None,
              dry: bool, limit: int | None, cleanup_merged: bool = False) -> None:
+    mode = adapter_mode(cfg)
     for seed in seeds:
         for cond in conds:
             p = paths(cond, seed)
             name = run_name(cond, seed)
             b = benchmarks_for(cfg, seed, benches)
             need_gen = any(not (eval_dir(name) / f"{x}.jsonl").exists() for x in b)
+            if need_gen and not (p["run"] / "adapter_config.json").exists() and not dry:
+                print(f"[pipeline] skip {name}: not trained yet")
+                continue
+            if mode == "lora":
+                evaluate_one(cfg, name, cfg["base_model"], cfg["renderer"], b, dry, limit=limit,
+                             adapter=str(p["run"]))
+                continue
             if need_gen and not has_weights(p["merged"]):
-                if not (p["run"] / "adapter_config.json").exists() and not dry:
-                    print(f"[pipeline] skip {name}: not trained yet")
-                    continue
-                sh([PY, "-m", "pno.train.merge", "--base", cfg["base_model"], "--adapter", p["run"],
-                    "--out", p["merged"]], dry)       # merged weights were cleaned up earlier; rebuild
-            evaluate_one(cfg, name, str(p["merged"]), cfg["renderer"], b, dry, limit=limit,
-                         dtype=cfg["eval"].get("dtype_trained"))
+                sh(merge_cmd(cfg, p), dry)            # first use, or the weights were cleaned up earlier
+            evaluate_one(cfg, name, str(p["merged"]), cfg["renderer"], b, dry, limit=limit, dtype=trained_dtype(cfg))
             if cleanup_merged and not dry and all((eval_dir(name) / f"{x}.jsonl").exists() for x in b):
                 for f in p["merged"].glob("*.safetensors"):
-                    f.unlink()                        # ~4.6 GB per run; the adapter in runs/ is kept
+                    f.unlink()                        # about 7 GB per run; the adapter in runs/ is kept
     for m in models:
         spec = cfg["models"][m]
         b = [x for x in benchmarks_for(cfg, None, benches) if not (x == "conflict" and spec["renderer"] != "chatml")]
-        evaluate_one(cfg, m, spec["path"], spec["renderer"], b, dry, spec.get("tokenizer"), limit, spec.get("dtype"))
+        dtype = trained_dtype(cfg) if spec.get("dtype") == "trained" else spec.get("dtype")
+        evaluate_one(cfg, m, spec["path"], spec["renderer"], b, dry, spec.get("tokenizer"), limit, dtype)
 
 
 # ---------------------------------------------------------------- status and gates
@@ -142,7 +171,7 @@ def status(cfg: dict) -> None:
             p = paths(cond, seed)
             n = run_name(cond, seed)
             flags = [p["data"].exists(), (p["run"] / "train_log.json").exists(),
-                     (p["merged"] / "pno_merge_info.json").exists()]
+                     (p["merged"] / "pno_merge_info.json").exists()]   # merged is only used in merge mode
             ev = ["done" if _summary(n, b) else ("gen" if (eval_dir(n) / f"{b}.jsonl").exists() else "-")
                   for b in ALL_BENCH]
             print(f"{n:34s} " + " ".join(f"{'yes' if f else '-':>5s}" for f in flags) + "  " +

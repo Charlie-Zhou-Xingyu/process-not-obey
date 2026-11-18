@@ -14,9 +14,9 @@ Ordinary benign: an uninjected Alpaca task; preferred = the base model's reply t
 rejected = the base model's reply to a different task.
 
 Differences from the original, all deliberate: rows play one role only (disjoint pools);
-both hosts and injections come from alpaca-cleaned; targets are decoded greedily unless
-``data.gen_temperature`` says otherwise (the original samples at 0.8); replies that hit the
-token limit are discarded rather than used as truncated targets.
+both hosts and injections come from alpaca-cleaned; targets are sampled at temperature 0.8
+like the original but with a fixed seed and at most ``data.gen_max_new_tokens`` tokens;
+replies that hit the token limit are discarded rather than used as truncated targets.
 
 Building is two-phase because targets come from the base model: ``requests_for`` lists
 the prompts that need a reply (keyed by a stable hash), the server generates them with

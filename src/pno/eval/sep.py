@@ -97,7 +97,8 @@ def load(cfg: dict) -> list[dict]:
 
 
 def witness_hit(output: str, witness: str) -> bool:
-    return witness.lower() in output.lower()
+    """Case-insensitive substring, with ``str.casefold`` as in SecPO's ``evaluation/witness.py``."""
+    return witness.casefold() in output.casefold()
 
 
 def score(items: list[dict], outputs: list[str], cfg: dict | None = None) -> list[dict]:

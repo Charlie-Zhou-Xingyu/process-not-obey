@@ -10,8 +10,12 @@
 """
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass
+from pathlib import Path
+
+from pno.io import revision_for
 
 
 @dataclass
@@ -36,18 +40,21 @@ def pick_device(preferred: str | None = None) -> str:
 
 class HFGenerator:
     def __init__(self, model_path: str, adapter_path: str | None = None, device: str | None = None,
-                 dtype: str | None = None, batch_size: int = 8):
+                 dtype: str | None = None, batch_size: int = 8, tokenizer_path: str | None = None,
+                 revision: str | None = "auto"):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         self.device = pick_device(device)
         if dtype is None:
             dtype = "bfloat16" if self.device == "cuda" else "float32"
-        self.tok = AutoTokenizer.from_pretrained(adapter_path or model_path)
+        rev = revision_for(model_path) if revision == "auto" else revision
+        tok_src = tokenizer_path or adapter_path or model_path
+        self.tok = AutoTokenizer.from_pretrained(tok_src, revision=rev if tok_src == model_path else revision_for(tok_src))
         self.tok.padding_side = "left"
         if self.tok.pad_token is None:
             self.tok.pad_token = self.tok.eos_token
-        model = AutoModelForCausalLM.from_pretrained(model_path, dtype=getattr(torch, dtype))
+        model = AutoModelForCausalLM.from_pretrained(model_path, dtype=getattr(torch, dtype), revision=rev)
         if adapter_path:
             from peft import PeftModel
 
@@ -88,16 +95,34 @@ class HFGenerator:
 
 
 class VLLMGenerator:
-    def __init__(self, model_path: str, tokenizer_path: str | None = None, dtype: str = "bfloat16",
-                 max_model_len: int = 4096, gpu_memory_utilization: float = 0.85,
-                 tensor_parallel_size: int = 1, seed: int = 0, **llm_kwargs):
+    """vLLM engine. A trained run is either a merged checkpoint (``model_path``) or, as in
+    Meta-SecAlign's evaluation code, the base model plus a LoRA adapter applied at run time
+    (``lora_path``: ``LLM(enable_lora=True, max_lora_rank=r)`` and a ``LoRARequest``)."""
+
+    def __init__(self, model_path: str, tokenizer_path: str | None = None, lora_path: str | None = None,
+                 dtype: str = "bfloat16", max_model_len: int = 4096, gpu_memory_utilization: float = 0.85,
+                 tensor_parallel_size: int = 1, seed: int = 0, revision: str | None = "auto", **llm_kwargs):
         from transformers import AutoTokenizer
         from vllm import LLM
 
-        self.tok = AutoTokenizer.from_pretrained(tokenizer_path or model_path)
-        kwargs = dict(model=model_path, tokenizer=tokenizer_path or model_path, dtype=dtype,
+        rev = revision_for(model_path) if revision == "auto" else revision
+        tok_src = tokenizer_path or model_path
+        tok_rev = rev if tok_src == model_path else revision_for(tok_src)
+        self.tok = AutoTokenizer.from_pretrained(tok_src, revision=tok_rev)
+        kwargs = dict(model=model_path, tokenizer=tok_src, dtype=dtype,
                       max_model_len=max_model_len, gpu_memory_utilization=gpu_memory_utilization,
                       tensor_parallel_size=tensor_parallel_size, seed=seed, **llm_kwargs)
+        if rev:
+            kwargs["revision"] = rev
+        if tok_rev:
+            kwargs["tokenizer_revision"] = tok_rev
+        self.lora_request = None
+        if lora_path:
+            from vllm.lora.request import LoRARequest
+
+            rank = json.loads((Path(lora_path) / "adapter_config.json").read_text())["r"]
+            kwargs.update(enable_lora=True, max_lora_rank=rank)
+            self.lora_request = LoRARequest("pno_adapter", 1, str(lora_path))
         try:
             self.llm = LLM(enable_prefix_caching=True, **kwargs)
         except TypeError:          # option renamed or removed in this vLLM version
@@ -117,7 +142,8 @@ class VLLMGenerator:
         ids = [x[:head] + x[len(x) - (limit - head):] if len(x) > limit else x for x in ids]
         sp = SamplingParams(temperature=cfg.temperature, top_p=cfg.top_p, max_tokens=cfg.max_new_tokens,
                             seed=cfg.seed, skip_special_tokens=True)
-        outs = self.llm.generate([TokensPrompt(prompt_token_ids=x) for x in ids], sp, use_tqdm=True)
+        outs = self.llm.generate([TokensPrompt(prompt_token_ids=x) for x in ids], sp, use_tqdm=True,
+                                 lora_request=self.lora_request)
         return [{"text": o.outputs[0].text, "truncated": o.outputs[0].finish_reason == "length"} for o in outs]
 
     def generate(self, prompts: list[str], cfg: GenConfig = GenConfig()) -> list[str]:

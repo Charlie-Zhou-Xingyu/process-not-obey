@@ -21,6 +21,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from pno.formatting import qwen_template_with_input_role
+from pno.io import revision_for
 
 WEIGHT_SUFFIXES = (".safetensors",)
 VERIFY_PROMPTS = [
@@ -36,7 +37,7 @@ def resolve_local(base: str) -> Path:
         return p
     from huggingface_hub import snapshot_download
 
-    return Path(snapshot_download(base))
+    return Path(snapshot_download(base, revision=revision_for(base)))
 
 
 def patch_chat_template(out_dir: Path) -> bool:
@@ -78,6 +79,13 @@ def export_merged(base: str, adapter: str, out: str, verify: bool = True) -> dic
     # about 1e-4, the same size as the LoRA update itself (alpha/r = 0.125, tens of steps),
     # so a bf16 merge rounds much of the update away.
     model = PeftModel.from_pretrained(AutoModelForCausalLM.from_pretrained(base_dir, dtype=torch.float32), adapter)
+    # As in SecPO's merge script: an adapter whose keys did not match loads as all zeros and
+    # would be "merged" without changing anything, so require a non-zero LoRA-B norm.
+    lora_b = [m.weight.detach().float().norm().item() for mod in model.modules()
+              for m in getattr(mod, "lora_B", {}).values() if hasattr(m, "weight")]
+    lora_norm = sum(x * x for x in lora_b) ** 0.5
+    if not lora_b or lora_norm == 0.0:
+        raise RuntimeError(f"no trained LoRA weights were loaded from {adapter} (tensors={len(lora_b)}, norm={lora_norm})")
     probe = None
     if verify:
         from transformers import AutoTokenizer
@@ -118,6 +126,8 @@ def export_merged(base: str, adapter: str, out: str, verify: bool = True) -> dic
         else:
             orig[ok] = (fname, v)          # tensors the adapter changed are stored in float32
             replaced.append(ok)
+    if not replaced:
+        raise RuntimeError("merging changed no tensor of the base checkpoint")
     bad_skips = [k for k in skipped if k != "lm_head.weight"]
     if bad_skips:
         raise KeyError(f"merged weights with no counterpart in the base checkpoint: {bad_skips[:5]}")
@@ -132,7 +142,8 @@ def export_merged(base: str, adapter: str, out: str, verify: bool = True) -> dic
             shutil.copy(f, out_dir / f.name)
     patch_chat_template(out_dir)
     info = {"base": str(base), "adapter": str(adapter), "replaced": len(replaced), "unchanged": unchanged,
-            "skipped": skipped, "examples": replaced[:5], "merged_dtype": "float32"}
+            "skipped": skipped, "examples": replaced[:5], "merged_dtype": "float32",
+            "lora_b_tensors": len(lora_b), "lora_b_norm": lora_norm}
     if verify:
         reloaded = AutoModelForCausalLM.from_pretrained(out_dir, dtype=torch.float32).eval()
         with torch.no_grad():

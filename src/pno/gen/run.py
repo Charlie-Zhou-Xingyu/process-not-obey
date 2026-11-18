@@ -35,13 +35,17 @@ def main(argv=None):
     ap.add_argument("--batch_size", type=int, default=8, help="hf backend only")
     ap.add_argument("--device", default=None, help="hf backend only")
     ap.add_argument("--max_model_len", type=int, default=4096, help="vllm backend only")
+    ap.add_argument("--adapter", default=None, help="LoRA adapter applied on top of --model")
+    ap.add_argument("--dtype", default=None, choices=["float32", "bfloat16"])
     args = ap.parse_args(argv)
 
     from pno.gen.backends import GenConfig, make_generator
 
     rows = read_jsonl(args.requests)
-    kw = ({"batch_size": args.batch_size, "device": args.device} if args.backend == "hf"
-          else {"max_model_len": args.max_model_len, "seed": args.seed})
+    kw = ({"batch_size": args.batch_size, "device": args.device, "adapter_path": args.adapter, "dtype": args.dtype}
+          if args.backend == "hf" else
+          {"max_model_len": args.max_model_len, "seed": args.seed, "lora_path": args.adapter,
+           "dtype": args.dtype or "bfloat16"})
     gen = make_generator(args.backend, args.model, **kw)
     prompts = render_rows(rows, args.renderer, getattr(gen, "tok", None), args.placement)
     outs = gen.generate_full(prompts, GenConfig(max_new_tokens=args.max_new_tokens,
