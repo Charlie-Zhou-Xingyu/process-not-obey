@@ -18,6 +18,8 @@ ALPACA_HF_ID = "yahma/alpaca-cleaned"
 
 _ASCII_OK = re.compile(r"^[A-Za-z0-9 ,.;:'\"!?()\-%$&/]+$")
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
+_ASSISTANT_TALK = re.compile(r"\b(AI|language model|assistant|I'm sorry|I am sorry|I cannot|I can't|I am unable|"
+                             r"I'm unable|I apologize)\b")
 
 # Leading words that make a sentence read as an instruction. Carrier sentences must not be
 # instruction-like, otherwise the "no conflict" competence check is not conflict-free.
@@ -65,21 +67,25 @@ def is_instruction_like(sentence: str) -> bool:
 
 
 def carrier_sentences(rows: list[AlpacaRow], min_words: int = 6, max_words: int = 18) -> list[str]:
-    """Plain declarative English sentences taken from Alpaca outputs."""
+    """Plain declarative English sentences taken from Alpaca outputs (prose lines only)."""
     out, seen = [], set()
     for r in rows:
-        if "\n" in r.output:
-            continue
-        for s in _SENT_SPLIT.split(r.output):
-            s = s.strip()
-            n = len(s.split())
-            if not (min_words <= n <= max_words) or not s.endswith(".") or not s[0].isupper():
+        for line in r.output.split("\n"):
+            line = line.strip()
+            if not line or not line[0].isupper():      # skips list items, code, numbered steps
                 continue
-            if not _ASCII_OK.match(s) or is_instruction_like(s) or "you" in s.lower().split():
-                continue
-            if s not in seen:
-                seen.add(s)
-                out.append(s)
+            for s in _SENT_SPLIT.split(line):
+                s = s.strip()
+                n = len(s.split())
+                if not (min_words <= n <= max_words) or not s.endswith(".") or not s[0].isupper():
+                    continue
+                if not _ASCII_OK.match(s) or is_instruction_like(s) or "you" in s.lower().split():
+                    continue
+                if _ASSISTANT_TALK.search(s):
+                    continue
+                if s not in seen:
+                    seen.add(s)
+                    out.append(s)
     return out
 
 

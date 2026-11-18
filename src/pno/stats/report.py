@@ -27,13 +27,14 @@ from pno.stats.bootstrap import contrast_bootstrap
 METRICS = {
     "secfid": {"safe_processing": "safe_processed", "security": "secure", "fidelity": "faithful",
                "processed": "processed", "other": "other"},
+    "secfid_clean": {"correct": "correct"},
     "sep": {"security": "secure"},
     "transfer": {"security": "secure"},
     "ifeval": {"prompt_strict": "prompt_strict", "prompt_loose": "prompt_loose"},
-    "conflict": {"safe_processed": "safe_processed"},
+    "conflict": {"safe_processed": "safe_processed", "executed": "executed", "ignored": "ignored"},
 }
 HEADLINE = [("secfid", "safe_processing"), ("secfid", "security"), ("secfid", "fidelity"),
-            ("sep", "security"), ("transfer", "security"), ("ifeval", "prompt_strict")]
+            ("sep", "security"), ("transfer", "security"), ("ifeval", "prompt_strict"), ("secfid_clean", "correct")]
 _RUN = re.compile(r"^(?P<cond>.+)-seed(?P<seed>\d+)$")
 
 

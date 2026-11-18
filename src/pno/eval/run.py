@@ -18,7 +18,7 @@ from pathlib import Path
 from pno.eval.common import load_outputs, render_items, save_outputs, save_scores
 from pno.io import load_config
 
-BENCHMARKS = ("secfid", "sep", "transfer", "ifeval", "conflict")
+BENCHMARKS = ("secfid", "secfid_clean", "sep", "transfer", "ifeval", "conflict")
 
 
 def get_benchmark(name: str):
@@ -78,7 +78,8 @@ def main(argv=None):
 
                 tok = AutoTokenizer.from_pretrained(a.tokenizer)
             prompts = render_items(items, a.renderer, tok, a.placement)
-            outs = gen.generate(prompts, GenConfig(max_new_tokens=ecfg[b]["max_new_tokens"]))
+            max_new = ecfg.get(b, ecfg["secfid"] if b == "secfid_clean" else {})["max_new_tokens"]
+            outs = gen.generate(prompts, GenConfig(max_new_tokens=max_new))
             save_outputs(out_dir / f"{b}.jsonl", items, outs)
             print(f"[eval] {a.name}/{b}: generated {len(outs)} outputs")
 
