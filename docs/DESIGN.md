@@ -47,7 +47,7 @@ system turn), which is how [4] evaluates undefended models.
 | prompt | [user: instruction, input: data with injection] | same |
 | preferred | base model's reply to the clean task, sent as one user message (instruction, blank line, data) | same |
 | rejected | base model's reply to the injected task alone | same |
-| decoding of targets | temperature 0.8, up to 8,192 tokens, no seed | greedy, up to 1,024 tokens; replies that hit the limit are dropped |
+| decoding of targets | temperature 0.8, up to 8,192 tokens, no seed | temperature 0.8, seed 0, up to 1,024 tokens; replies that hit the limit are dropped |
 
 Rows play one role only here (host, injected task, benign task, carrier source, content
 source are disjoint pools); the original allows overlap.
@@ -120,13 +120,19 @@ check: gate 4 tests whether the baseline changes behavior at this scale.
 Software checked locally: torch 2.15.0, transformers 5.23.0, trl 1.18.1, peft 0.21.3.
 TRL receives prompts as plain strings and appends `<|im_end|>` to both responses.
 
-Merging. For evaluation the adapter is merged into a copy of the base checkpoint. The merge
-is done and stored in float32, and merged runs (and the base model) are evaluated in
-float32: near a weight of 0.02 the bfloat16 grid has a spacing of about 1e-4, the same size
-as the LoRA update at alpha/r = 0.125 after a few dozen steps, so a bfloat16 merge would
-round much of the update away. `pno.train.merge` compares the merged model's next-token
-logits with base + adapter and records the difference in `pno_merge_info.json`. Training
-uses one GPU; the script refuses to start if several are visible.
+Serving trained runs. By default a trained run is evaluated as Meta-SecAlign evaluates its
+adapters: the base model in vLLM with the LoRA adapter applied at run time
+(`LLM(enable_lora=True, max_lora_rank=r)` and a `LoRARequest`), so the model that is
+evaluated is the one that was trained. Whether vLLM can do this for Qwen3.5 has to be checked
+on the server (`python -m pno.tools.check_backend --adapter runs/<run>`). The fallback,
+`eval.adapter_mode: merge`, merges the adapter into a copy of the base checkpoint, as SecPO
+does for its released Qwen models. SecPO merges in bfloat16; we merge and evaluate in
+float32, because near a weight of 0.02 the bfloat16 grid has a spacing of about 1e-4, the
+same size as the LoRA update at alpha/r = 0.125 after a few dozen steps. `pno.train.merge`
+refuses an adapter whose LoRA weights are all zero (SecPO's check) and compares the merged
+model's next-token logits with base + adapter. Training uses one GPU; the script refuses to
+start if several are visible. Hub models are loaded at the commits pinned in
+`configs/experiment.yaml`, as SecPO pins its base model.
 
 ## 5. Evaluation
 
@@ -150,7 +156,9 @@ Notes:
   `task_other`. Security, fidelity and safe processing are unaffected.
 - SecFid prescribes no prompt template or token limit. We use the user/input format above,
   greedy decoding and up to 2,048 new tokens (gold outputs reach about 4.4k characters).
-- SEP: Meta-SecAlign v2/v3 counted the witness alone; its current code and SecPO add an LLM
+- SEP: the six attacks are those of Meta-SecAlign's `test.py` and SecPO's
+  `evaluation/sep_static.py`; the witness test is SecPO's (`str.casefold` substring).
+  Meta-SecAlign v2/v3 counted the witness alone; its current code and SecPO add an LLM
   judge on top. Witness-only ASR is therefore an upper bound on theirs. The fake answer in
   completion attacks is the base model's reply to the clean prompt, generated once and
   reused, so every model sees the same attack prompts.

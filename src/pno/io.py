@@ -53,3 +53,14 @@ def load_config(path: str | os.PathLike | None = None) -> dict:
 def stable_hash(*parts: Any, n: int = 12) -> str:
     h = hashlib.sha256("\x1f".join(map(str, parts)).encode("utf-8")).hexdigest()
     return h[:n]
+
+
+def revision_for(model: str | os.PathLike, cfg: dict | None = None) -> str | None:
+    """Pinned commit of a hub model (config ``revisions``); None for local paths and unpinned ids."""
+    if Path(model).exists():
+        return None
+    try:
+        cfg = cfg or load_config()
+    except FileNotFoundError:
+        return None
+    return (cfg.get("revisions") or {}).get(str(model))

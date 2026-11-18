@@ -31,7 +31,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--name", required=True, help="model name used for the output directory")
     ap.add_argument("--model", help="HF id or local path (not needed with --score_only)")
-    ap.add_argument("--adapter", default=None, help="hf backend only: LoRA adapter to load on top of --model")
+    ap.add_argument("--adapter", default=None, help="LoRA adapter applied on top of --model (either backend)")
     ap.add_argument("--tokenizer", default=None,
                     help="render with this tokenizer's chat template instead of the model's (renderer=hf)")
     ap.add_argument("--renderer", default="chatml", choices=["chatml", "hf"])
@@ -74,7 +74,7 @@ def main(argv=None):
                                  dtype=a.dtype)
         else:
             gen = make_generator("vllm", a.model, max_model_len=ecfg["max_model_len"], tokenizer_path=a.tokenizer,
-                                 dtype=a.dtype or "bfloat16")
+                                 lora_path=a.adapter, dtype=a.dtype or "bfloat16")
         for b, items in todo.items():
             tok = gen.tok
             if a.tokenizer and a.renderer == "hf" and backend == "hf":

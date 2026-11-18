@@ -1,6 +1,6 @@
 # 推进计划：Learning to Process, Not Obey
 
-更新于 2026-11-18（周三）。对应 Proposal v4。英文的设置出处见 `docs/DESIGN.md`，所有数字在 `configs/experiment.yaml`。
+更新于 2026-11-18（周三）。对应 Proposal v4。代码讲解见 `docs/WALKTHROUGH.md`，设置出处见 `docs/DESIGN.md`（英文），所有数字在 `configs/experiment.yaml`。
 
 ## 1. 现在在哪
 
@@ -16,7 +16,7 @@
 - Proposal 里写"11 月 15 日前"完成的四项检查（下面叫 gate 1–4）一项都还没跑，因为服务器没到。
 - ignore-style 和 ordinary 两类数据的目标回答要由基座模型生成。
 - 18 次训练、22 个模型的评测。
-- vLLM 路径只写了代码，没在 GPU 上跑过（Mac 上装不了 vLLM）。到服务器第一件事就是验证它；不行就用 `PNO_BACKEND=hf`。
+- vLLM 路径只写了代码，没在 GPU 上跑过（Mac 上装不了 vLLM）。到服务器第一件事就是跑后端自检（`python -m pno.tools.check_backend`）；不行就用 `PNO_BACKEND=hf`。
 
 **时间上的问题**
 
@@ -67,15 +67,18 @@ hf auth login                            # 账号要有 Llama-3.1-8B-Instruct �
 ```
 
 ```bash
+GATES=0 bash scripts/10_gates.sh         # 后端自检：vLLM 能不能跑 Qwen3.5、和 transformers 的输出是否一致
 GATES=1 bash scripts/10_gates.sh         # gate 1：基座模型能做哪些变换 → outputs/competence/qwen3.5-2b/keep.json
 ```
+
+自检不过（vLLM 跑不了基座模型）就在后面所有命令前加 `PNO_BACKEND=hf`。
 
 看 `outputs/competence/qwen3.5-2b/competence.csv`，确认保留下来的变换够用（标准见第 5 节），再继续：
 
 ```bash
 GATES="2 3" bash scripts/10_gates.sh     # gate 2：SecFid 打分能否复现发表的数；gate 3：基座模型是否易受攻击、能否做任务
 python -m pno.eval.secfid crosscheck --outputs outputs/eval/meta_secalign_8b/secfid.jsonl   # 我们的打分 vs 官方脚本
-GATES=4 bash scripts/10_gates.sh         # gate 4：生成目标回答 + 组装数据 + 训练 C1 + 评测
+GATES=4 bash scripts/10_gates.sh         # gate 4：生成目标回答 + 组装数据 + 训练 C1 + 第二次后端自检（LoRA / 合并哪种能用）+ 评测
 ```
 
 四个 gate 都过了之后：
@@ -115,7 +118,8 @@ Proposal 没写到这么细，下面是实现时定下来的。前 5 条会影�
 5. **Transfer attack 的构造。** SecPO 只在训练集里放了优化过的注入串，每条都是围绕某个 Alpaca 指令写的，没有成功与否的标注，直接重放需要 LLM judge。我们的做法：取"目标指令原样出现一次"的注入串，把目标换成 SEP 的 probe，接在 SEP 数据后面，用 witness 是否出现来判成功。其中一部分注入串其实就是 SecPO 的 87 个种子模板（没被改写过），报告里分开报。局限要写进报告：这些串是针对 Llama-3.1-8B 优化的；改写过的串可能提到原来的宿主任务，换了目标后会变弱。
 6. **SEP 用 2,000 条的固定子集 × 6 种攻击，只看 witness。** 全量 9,160 条 × 6 × 22 个模型太贵。Meta-SecAlign 现在的代码和 SecPO 在 witness 之外还加了 LLM judge，所以我们的 ASR 是它们口径的上界。终稿前如果时间够，可以把 `eval.sep.n_items` 改成 null 跑全量。
 7. **SecFid 打分是按官方规则重写的**，不是直接调用官方脚本（好处是可以批量算 embedding、能算 safe-processing）。用 `crosscheck` 核对一次。
-8. **自生成的目标回答用贪心解码**（Meta-SecAlign 是温度 0.8 采样），撞到 1,024 token 上限的回答直接丢弃。
+   - 相关的一条：**评测时怎么加载训练结果。** 默认照 Meta-SecAlign 的做法，vLLM 加载基座再在运行时挂 LoRA（`eval.adapter_mode: lora`），不产生额外的 checkpoint。vLLM 能不能对 Qwen3.5 这样做要到服务器上才知道；不行就用 `PNO_ADAPTER_MODE=merge`，改成评测 float32 合并后的 checkpoint（每个约 7 GB）。`check_backend` 会告诉你哪种能用。
+8. **自生成的目标回答按两个官方仓库的做法用温度 0.8 采样**（固定 seed），最长 1,024 token（它们是 8,192），撞到上限的回答直接丢弃。
 9. **fidelity 数据里的"像指令的内容句"**取自 Alpaca 的单句指令和问句（SecFid 的 probe 是问句）。任务仍然是目录里的变换，不碰翻译、编辑、抽取、计数这四类 SecFid 任务。
 10. **按"行为"而不是按"指令"均匀采样变换。** 目录里有六七条指令对普通英文句子的效果都是"原样返回"（copy、NFC/NFD/NFKC、strip 等），不做平衡的话"原样复制"会占掉很大一部分数据。
 11. **每个 seed 内各条件共享组件。** C1/C3/C5/C6 的 ordinary 部分完全相同；C3/C5/C6 是同一批冲突的三种写法；C2/C4 的 fidelity 部分相同。

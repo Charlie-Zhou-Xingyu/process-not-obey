@@ -6,65 +6,120 @@ ignoring them, keeps security while losing less content. Base model: Qwen3.5-2B,
 six training conditions, three seeds. Main benchmark: SecFid.
 
 - `PLAN.md` - the working plan: milestones, commands, go/no-go checks (in Chinese).
+- `docs/WALKTHROUGH.md` - a guided tour of the code (in Chinese).
 - `docs/DESIGN.md` - what each setting is and where it comes from.
 - `configs/experiment.yaml` - every number the scripts use.
 
-## Layout
+The layout follows the two repositories this work builds on, Meta-SecAlign and SecPO:
+environment setup, a `demo.py`, data construction, training, evaluation.
 
-```
-src/pno/
-  catalog/     99 instructions of the goal-goal paper + 14 sentence/line operations
-  data/        pools, injection placement, six conditions (build.py)
-  gen/         greedy generation: vLLM (server) or transformers (laptop)
-  train/       dpo.py (TRL DPO + LoRA), merge.py (export in the base checkpoint layout)
-  eval/        secfid, secfid_clean, sep, transfer, ifeval, conflict, competence; run.py
-  stats/       paired item bootstrap, report.py
-  pipeline.py  train / eval / status / gates over the whole grid
-scripts/       00_setup_server .. 50_report
-tests/         unit tests + CPU end-to-end smoke test on a tiny random Qwen3.5
+# Environment setup
+
+Hardware: one 40-80 GB GPU for training and evaluation (Qwen3.5-2B; the three 8B references
+also fit). A laptop is enough for the unit tests and for building the data that needs no
+model.
+
+```bash
+git clone https://github.com/Charlie-Zhou-Xingyu/process-not-obey.git && cd process-not-obey
+bash scripts/00_setup_server.sh     # venv, vLLM + TRL + PEFT, pinned third-party repos, unit tests
+hf auth login                       # access to meta-llama/Llama-3.1-8B-Instruct and google/embeddinggemma-300m
 ```
 
-## Laptop (no GPU needed)
+Laptop:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[train,eval,dev]"
 bash scripts/fetch_third_party.sh
 pytest -q -m "not slow"                 # unit tests
-pytest -q tests/test_smoke_train.py     # ~1 min on CPU; needs a local Qwen3.5-2B snapshot (PNO_QWEN_LOCAL)
-python -m pno.data.build preview        # one real example of each generation-free component
+pytest -q tests/test_smoke_train.py     # end to end on a tiny random Qwen3.5 (CPU; needs PNO_QWEN_LOCAL)
 ```
 
-## Server
+Model revisions are pinned in `configs/experiment.yaml` (`revisions`), as SecPO pins its
+base model.
+
+# Demo
+
+`demo.py` runs two injection examples through the base model and, with `--adapter`, through
+a trained run. For each it prints what executing, processing and ignoring the injected
+sentence would look like, then the model's output and its label.
 
 ```bash
-bash scripts/00_setup_server.sh
-hf auth login                 # access to meta-llama/Llama-3.1-8B-Instruct and google/embeddinggemma-300m
-bash scripts/10_gates.sh      # four go/no-go checks; prints PASS / what to do otherwise
-bash scripts/30_train.sh --seeds 0
-bash scripts/40_eval.sh  --seeds 0 --cleanup_merged
-bash scripts/50_report.sh     # outputs/report/report.md
+python demo.py
+python demo.py --adapter runs/C3_process_ordinary-seed0
 ```
 
-Everything is restartable: finished generations, runs and scores are skipped.
-`python -m pno.pipeline status` shows what exists; add `--dry_run` to `train` or `eval` to
-print the commands without running them.
+# Data
 
-Two environments. If vLLM's pinned packages clash with the training stack, install vLLM
-(plus `pip install -e .` and `datasets`) in a second venv and export
-`PNO_GEN_PYTHON=/path/to/that/python`; generation then runs there and training and scoring
-in the main one. `PNO_BACKEND=hf` avoids vLLM altogether (slower).
+Six conditions, 2,000 security pairs + 2,000 benign pairs each (`docs/DESIGN.md`, section 1).
 
-Disk. Each merged checkpoint is about 7 GB (18 runs): the tensors the adapter changed are
-stored in float32 so the update is not rounded to bfloat16. `--cleanup_merged` deletes a
-run's merged weights once its outputs exist; adapters in `runs/` are kept and re-merged on
-demand.
+```bash
+python -m pno.data.build preview    # one real example of each generation-free component
+bash scripts/20_build_data.sh       # after gate 1: base-model targets, then all conditions and seeds
+```
 
-## Third-party material
+Process-style, target-control, boundary-control and fidelity pairs are computed by Python
+from the instruction catalog (`src/pno/catalog/`). Ignore-style and ordinary pairs follow
+Meta-SecAlign's SecAlign++ recipe and need the base model's own replies as targets.
 
-Nothing from other repositories is vendored. `scripts/fetch_third_party.sh` clones, at
-pinned commits: SecFid (code MIT, data CC BY-SA 4.0), SEP, Meta-SecAlign (CC BY-NC 4.0) and
-SecPO (Apache-2.0). We read their data files and parse literal constants; we do not import
+# Training
+
+LoRA + DPO with the settings of the goal-goal paper, which match SecPO's Qwen configuration
+(rank 64, alpha 8, dropout 0.1, beta 0.1, learning rate 1.6e-4, one epoch, effective batch
+64, linear schedule with 3% warmup).
+
+```bash
+bash scripts/10_gates.sh             # backend check + the proposal's four go/no-go checks
+bash scripts/30_train.sh --seeds 0   # six conditions, one seed
+```
+
+# Evaluation
+
+```bash
+bash scripts/40_eval.sh --seeds 0    # trained runs, the base model and three references
+bash scripts/50_report.sh            # outputs/report/report.md: tables, bootstrap contrasts, hypothesis check
+```
+
+- Benchmarks: SecFid (headline: safe processing), SecFid on clean inputs, SEP with the six
+  static attacks of Meta-SecAlign and SecPO, a transfer attack built from SecPO's released
+  injections, IFEval, and held-out goal-goal conflicts.
+- Trained runs are served the way Meta-SecAlign evaluates its adapters: the base model in
+  vLLM plus the LoRA adapter at run time (`eval.adapter_mode: lora`). If vLLM cannot apply
+  LoRA to Qwen3.5, `PNO_ADAPTER_MODE=merge` evaluates merged float32 checkpoints instead
+  (about 7 GB each; `--cleanup_merged` deletes them once outputs exist).
+  `python -m pno.tools.check_backend --adapter runs/<run>` tells which mode works.
+- `PNO_BACKEND=hf` replaces vLLM by plain transformers (slower). If vLLM's pinned packages
+  clash with the training stack, install vLLM in a second venv and point
+  `PNO_GEN_PYTHON` at it.
+- Everything is restartable; `python -m pno.pipeline status` shows what exists and
+  `--dry_run` prints commands without running them.
+
+# Layout
+
+```
+src/pno/
+  catalog/     99 instructions of the goal-goal paper + 14 sentence/line operations
+  data/        pools, injection placement, six conditions (build.py)
+  gen/         generation: vLLM (server) or transformers (laptop)
+  train/       dpo.py (TRL DPO + LoRA), merge.py (merged export, merge mode only)
+  eval/        secfid, secfid_clean, sep, transfer, ifeval, conflict, competence; run.py
+  stats/       paired item bootstrap, report.py
+  tools/       check_backend.py
+  pipeline.py  train / eval / status / gates over the whole grid
+scripts/       00_setup_server .. 50_report
+tests/         unit tests + CPU end-to-end smoke test on a tiny random Qwen3.5
+demo.py
+```
+
+# Acknowledgements and third-party material
+
+The data recipe, prompt format and SEP protocol follow
+[Meta-SecAlign](https://github.com/facebookresearch/Meta_SecAlign) (CC BY-NC 4.0) and
+[SecPO](https://github.com/Sizhe-Chen/SecPO) (Apache-2.0); the benchmark is
+[SecFid](https://github.com/mhermon/sec-fid) (code MIT, data CC BY-SA 4.0); SEP data come
+from [its repository](https://github.com/egozverev/Should-It-Be-Executed-Or-Processed).
+Nothing from these repositories is vendored: `scripts/fetch_third_party.sh` clones them at
+pinned commits, and we read their data files and parse literal constants without importing
 their code. `src/pno/catalog/goalgoal_catalog.json` transcribes the instruction catalog of
 arXiv:2610.35093 (CC BY 4.0); the implementations are ours. The SecFid scoring rules in
 `src/pno/eval/secfid.py` re-implement the logic of that benchmark's `evaluate.py`

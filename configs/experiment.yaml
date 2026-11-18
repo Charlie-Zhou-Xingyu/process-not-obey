@@ -5,6 +5,11 @@
 base_model: Qwen/Qwen3.5-2B
 renderer: chatml            # Qwen3.5 ChatML, non-thinking, untrusted text in an "input" role
 
+revisions:                  # immutable hub commits, as [5] pins its base model; unlisted ids use "main"
+  Qwen/Qwen3.5-2B: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  Sizhe-Chen/Llama-3.1-8B-Instruct-MetaSecAlign: 5ae69e7ba7fe1ff8b5cdd4f24eb6aad1c54c6794
+  Sizhe-Chen/Llama-3.1-8B-Instruct-SecPO: d244fe7440209ff089418ca8d0717ef7bda0da4c
+
 seeds: [0, 1, 2]
 
 data:
@@ -22,7 +27,8 @@ data:
   max_target_chars: 1500
   trusted_suffix: ""               # appended to trusted instructions only; "" = the catalog wording of [8]
   gen_max_new_tokens: 1024         # self-generated targets; replies that hit the limit are dropped
-  gen_temperature: 0.0             # [4] samples at 0.8; greedy keeps targets reproducible
+  gen_temperature: 0.8             # as in the label-generation code of [4] and [5] (top_p 1.0, one sample)
+  gen_seed: 0
 
 conditions:
   C1_ignore_ordinary:   {security: ignore,   benign: ordinary}   # standard recipe (baseline)
@@ -49,6 +55,8 @@ training:                  # settings of [8] (App. C), which match the Qwen runs
   lr_scheduler_type: linear        # [8]: "warmup then decay"; [5] Qwen: linear
   warmup_ratio: 0.03
   max_grad_norm: 1.0               # [5] Qwen
+  optim: adamw_torch               # [8] "PyTorch AdamW"; [5] Qwen config
+  weight_decay: 0.0
   beta: 0.1
   loss_type: sigmoid
   max_length: 2048
@@ -59,13 +67,14 @@ training:                  # settings of [8] (App. C), which match the Qwen runs
   # (full attention); the Gated DeltaNet layers in between are adapted through their MLPs only.
   lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
   gradient_checkpointing: true
-  logging_steps: 5
+  logging_steps: 1                 # 63 updates in total
   report_to: []
 
 eval:
   backend: vllm
   max_model_len: 8192
-  dtype_trained: float32           # merged runs keep their LoRA update in float32 (see pno/train/merge.py)
+  adapter_mode: lora               # lora: base + run-time adapter, as [4] evaluates; merge: merged checkpoints
+  dtype_trained: float32           # merge mode only: merged runs keep their LoRA update in float32
   secfid:
     max_new_tokens: 2048           # gold outputs reach ~4.4k characters
     scorer_device: auto            # "cpu" keeps the embedding scorer off the GPU
@@ -81,6 +90,7 @@ eval:
     seeds: [0]                     # proposal: one seed per condition
     hf_dataset: Sizhe-Chen/Llama-3.1-8B-Instruct-SecPO-trainset
     hf_file: preference_Llama-3.1-8B-Instruct_dpo_NaiveCompletion_randpos_synthetic_alpaca_optimized.json
+    hf_revision: f347c3abe1f451e88b02918c6bc3921e6816d8c6
     max_wrapper_chars: 1500
   ifeval:
     max_new_tokens: 1280           # as in [4]
@@ -93,7 +103,7 @@ eval:
   noninferiority_margin: 0.02      # security may drop by at most 2 points
 
 models:                    # evaluated but never trained
-  base_qwen35_2b:   {path: Qwen/Qwen3.5-2B, renderer: chatml, dtype: float32}   # same dtype as the trained runs
+  base_qwen35_2b:   {path: Qwen/Qwen3.5-2B, renderer: chatml, dtype: trained}   # same dtype as the trained runs
   # undefended Llama rendered with the Meta-SecAlign template (no default system turn), as in [4]
   llama31_8b_instr: {path: meta-llama/Llama-3.1-8B-Instruct, renderer: hf,
                      tokenizer: Sizhe-Chen/Llama-3.1-8B-Instruct-MetaSecAlign}
