@@ -60,7 +60,8 @@ def build_items(reg, sentences: list[str], n: int, seed, delm_tokens: dict | Non
             units, _ = insert_unit(carrier, rng.choice(sentences), rng.choice(BENIGN_POSITIONS), rng)
             data = join_units(units, t.unit)
             items.append({"transform": name, "j": j, "variant": "clean",
-                          "prompt": Prompt(t.instruction("input"), data).to_dict(), "expected": t.apply(data)})
+                          "prompt": Prompt(reg.trusted_instruction(t, "input"), data).to_dict(),
+                          "expected": t.apply(data)})
         if not conflict:
             continue
         for j in range(n):
@@ -129,13 +130,16 @@ def main(argv=None):
     ap.add_argument("--only", nargs="*", help="restrict to these transforms (smoke tests)")
     ap.add_argument("--config", default=None)
     ap.add_argument("--max_new_tokens", type=int, default=384)
+    ap.add_argument("--trusted_suffix", default=None,
+                    help='override data.trusted_suffix, e.g. " Output only the result." (pilots)')
     ap.add_argument("--batch_size", type=int, default=16, help="hf backend only")
     ap.add_argument("--device", default=None, help="hf backend only")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
     d = cfg["data"]
-    reg = build_registry()
+    suffix = d.get("trusted_suffix", "") if args.trusted_suffix is None else args.trusted_suffix
+    reg = build_registry(trusted_suffix=suffix)
     cache = Path(d["alpaca_cache"])
     rows = load_alpaca(cache if cache.is_absolute() else REPO_ROOT / cache)
     pools = make_pools(rows, d["pool_seed"])
@@ -158,7 +162,8 @@ def main(argv=None):
         w.writeheader()
         w.writerows(table)
     write_json(out / "keep.json", {
-        "model": args.model, "threshold": args.threshold, "n": args.n, "keep": keep, "n_keep": len(keep),
+        "model": args.model, "threshold": args.threshold, "n": args.n, "trusted_suffix": suffix,
+        "keep": keep, "n_keep": len(keep),
         "n_total": len(table), "keep_goalgoal": [k for k in keep if reg[k].source == "goalgoal"],
         "keep_extra": [k for k in keep if reg[k].source == "extra"]})
     gg = sum(reg[k].source == "goalgoal" for k in keep)

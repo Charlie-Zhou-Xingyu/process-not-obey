@@ -5,8 +5,8 @@ from __future__ import annotations
 from pno.catalog.base import Registry, Transform
 
 
-def build_registry(include: tuple[str, ...] = ("goalgoal", "extra")) -> Registry:
-    reg = Registry()
+def build_registry(include: tuple[str, ...] = ("goalgoal", "extra"), trusted_suffix: str = "") -> Registry:
+    reg = Registry(trusted_suffix)
     if "goalgoal" in include:
         from pno.catalog import goalgoal
 
