@@ -95,7 +95,7 @@ bash scripts/50_report.sh                                # 三个 seed 的置信
 
 | gate | 看什么 | 通过标准 | 不通过怎么办 |
 |---|---|---|---|
-| 1 | 113 个变换（99 + 14）里，基座模型在无冲突输入上精确匹配率 ≥ 80% 且对内容敏感的有多少 | 保留的变换至少覆盖 8 种不同行为 | 降阈值到 0.7；或再加句子/行级操作（proposal 的风险 1） |
+| 1 | 113 个变换（99 + 14）里，基座模型在无冲突输入上精确匹配率 ≥ 80% 且对内容敏感的有多少 | 保留的变换至少覆盖 8 种不同行为 | 打开 `data.trusted_suffix`（第 6 节第 13 条）；降阈值到 0.7；再加句子/行级操作（proposal 的风险 1）。保留数少时把 `data.injected_from` 改成 `all`，让注入句来自全部 113 条而不只是保留下来的那几条 |
 | 2 | Meta-SecAlign-8B 在 SecFid 上：发表值 security 99.3、fidelity 73.9 | security 差 ≤ 1.5 点，fidelity 差 ≤ 3 点 | 先查 prompt 模板（有没有多出 system 段）、最大生成长度、embedding 模型版本 |
 | 3 | 基座 Qwen3.5-2B 在 SecFid 上的 executed 率，以及干净输入上的正确率 | executed ≥ 20%；干净输入正确率 ≥ 50% | 换 Llama-3.1-8B（[6] 在它上面有完整数据） |
 | 4 | C1（ignore-style）训练后，SecFid 的 ignored 率比基座高多少 | ≥ 5 个点 | 先把 security pairs 翻倍；还不行换 Llama-3.1-8B（proposal 原话） |

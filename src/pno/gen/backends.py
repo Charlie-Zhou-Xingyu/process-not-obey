@@ -95,10 +95,13 @@ class VLLMGenerator:
         from vllm import LLM
 
         self.tok = AutoTokenizer.from_pretrained(tokenizer_path or model_path)
-        self.llm = LLM(model=model_path, tokenizer=tokenizer_path or model_path, dtype=dtype,
-                       max_model_len=max_model_len, gpu_memory_utilization=gpu_memory_utilization,
-                       tensor_parallel_size=tensor_parallel_size, seed=seed,
-                       enable_prefix_caching=True, **llm_kwargs)
+        kwargs = dict(model=model_path, tokenizer=tokenizer_path or model_path, dtype=dtype,
+                      max_model_len=max_model_len, gpu_memory_utilization=gpu_memory_utilization,
+                      tensor_parallel_size=tensor_parallel_size, seed=seed, **llm_kwargs)
+        try:
+            self.llm = LLM(enable_prefix_caching=True, **kwargs)
+        except TypeError:          # option renamed or removed in this vLLM version
+            self.llm = LLM(**kwargs)
         self.max_model_len = max_model_len
 
     def generate_full(self, prompts: list[str], cfg: GenConfig = GenConfig()) -> list[dict]:
