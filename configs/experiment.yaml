@@ -65,6 +65,7 @@ training:                  # settings of [8] (App. C), which match the Qwen runs
 eval:
   backend: vllm
   max_model_len: 8192
+  dtype_trained: float32           # merged runs keep their LoRA update in float32 (see pno/train/merge.py)
   secfid:
     max_new_tokens: 2048           # gold outputs reach ~4.4k characters
     scorer_device: auto            # "cpu" keeps the embedding scorer off the GPU
@@ -92,7 +93,7 @@ eval:
   noninferiority_margin: 0.02      # security may drop by at most 2 points
 
 models:                    # evaluated but never trained
-  base_qwen35_2b:   {path: Qwen/Qwen3.5-2B, renderer: chatml}
+  base_qwen35_2b:   {path: Qwen/Qwen3.5-2B, renderer: chatml, dtype: float32}   # same dtype as the trained runs
   # undefended Llama rendered with the Meta-SecAlign template (no default system turn), as in [4]
   llama31_8b_instr: {path: meta-llama/Llama-3.1-8B-Instruct, renderer: hf,
                      tokenizer: Sizhe-Chen/Llama-3.1-8B-Instruct-MetaSecAlign}

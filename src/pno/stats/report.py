@@ -69,11 +69,16 @@ def condition_matrix(per_model: dict[str, dict], runs: list[str], ids: list[str]
 def build_report(eval_dir: Path, cfg: dict) -> dict:
     scores = load_scores(eval_dir)
     bcfg = cfg["eval"]["bootstrap"]
-    metrics_rows, cond_rows, contrast_rows = [], [], []
+    metrics_rows, cond_rows, contrast_rows, warnings = [], [], [], []
     matrices: dict = {}
     for bench, by_metric in scores.items():
         for metric, per_model in by_metric.items():
             ids = sorted(set.intersection(*(set(v) for v in per_model.values())))
+            full = max(len(v) for v in per_model.values())
+            short = sorted(m for m, v in per_model.items() if len(v) < full)
+            if short:
+                warnings.append(f"{bench}:{metric} is computed on the {len(ids)} items common to all models; "
+                                f"these have fewer than {full}: {', '.join(short)}")
             groups = group_runs(list(per_model))
             for model, vals in per_model.items():
                 metrics_rows.append({"benchmark": bench, "metric": metric, "model": model,
@@ -95,7 +100,9 @@ def build_report(eval_dir: Path, cfg: dict) -> dict:
                                       "estimate": r["estimate"], "ci_low": r["ci_low"], "ci_high": r["ci_high"],
                                       "n_items": r["n_items"],
                                       "n_seeds": min(matrices[(bench, metric, c)].shape[0] for c in weights)})
-    return {"metrics": metrics_rows, "conditions": cond_rows, "contrasts": contrast_rows}
+    for w in warnings:
+        print("[report] WARNING: " + w)
+    return {"metrics": metrics_rows, "conditions": cond_rows, "contrasts": contrast_rows, "warnings": warnings}
 
 
 def hypothesis_check(contrasts: list[dict], margin: float) -> dict:
@@ -162,6 +169,8 @@ def to_markdown(rep: dict, hyp: dict) -> str:
               f"- transfer-attack security drop within {100 * hyp['margin']:.0f} points: "
               f"**{hyp['transfer_drop_within_margin']}** (CI version: {hyp['transfer_noninferior_by_ci']})",
               f"- all three measured: {hyp['complete']}; hypothesis supported: **{hyp['supported']}**"]
+    if rep.get("warnings"):
+        lines += ["\n## Warnings\n"] + [f"- {w}" for w in rep["warnings"]]
     return "\n".join(lines) + "\n"
 
 

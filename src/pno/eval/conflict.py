@@ -13,7 +13,7 @@ whether learning transfers across the two boundaries, before we look at SecFid.
 """
 from __future__ import annotations
 
-from pno.data.conflicts import boundary_pair, join_units, process_pair, target_pair
+from pno.data.conflicts import boundary_pair, process_pair, target_pair
 from pno.eval.common import mean
 from pno.textnorm import exact_match
 

@@ -98,6 +98,8 @@ class TransformSampler:
     def sample(self, exclude: str | None = None) -> str:
         classes = [[n for n in c if n != exclude] for c in self.classes]
         classes = [c for c in classes if c]
+        if not classes:
+            raise ValueError("transform pool has nothing left to sample (it needs at least two transforms)")
         return self.rng.choice(self.rng.choice(classes))
 
 
@@ -159,6 +161,10 @@ def sample_conflict(reg: Registry, user_sampler: TransformSampler, inj_sampler: 
         tu = reg[user_sampler.sample()]
         ti = reg[inj_sampler.sample(exclude=tu.name)]
         kind = inj_.sample_kind(rng, weights)
+        if kind == "completion" and tu.category == "sentence":
+            # Sentence operations have no sensible reference on a completion-style input: the
+            # fake-delimiter lines and the numbered fake answer are not sentences. Use start/end.
+            kind = rng.choice(("start", "end"))
         marks = inj_.sample_marks(rng, delm_tokens) if kind == "completion" else None
         spec = ConflictSpec(tu.name, ti.name, carriers.sample(tu.unit), kind, marks, seed_tag)
         p, t, b = process_pair(reg, spec), target_pair(reg, spec), boundary_pair(reg, spec)

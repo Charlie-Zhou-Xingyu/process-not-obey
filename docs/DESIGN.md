@@ -120,6 +120,14 @@ check: gate 4 tests whether the baseline changes behavior at this scale.
 Software checked locally: torch 2.15.0, transformers 5.23.0, trl 1.18.1, peft 0.21.3.
 TRL receives prompts as plain strings and appends `<|im_end|>` to both responses.
 
+Merging. For evaluation the adapter is merged into a copy of the base checkpoint. The merge
+is done and stored in float32, and merged runs (and the base model) are evaluated in
+float32: near a weight of 0.02 the bfloat16 grid has a spacing of about 1e-4, the same size
+as the LoRA update at alpha/r = 0.125 after a few dozen steps, so a bfloat16 merge would
+round much of the update away. `pno.train.merge` compares the merged model's next-token
+logits with base + adapter and records the difference in `pno_merge_info.json`. Training
+uses one GPU; the script refuses to start if several are visible.
+
 ## 5. Evaluation
 
 | benchmark | items | criterion | source |
@@ -152,8 +160,17 @@ Notes:
   Wrappers equal to one of SecPO's 87 seed templates are reported separately from refined
   ones. The injections were optimized against Llama-3.1-8B checkpoints, and refined wrappers
   may refer to their original host task, so this is a transfer attack only.
+- Exact match (competence filter, held-out conflicts): the reference is compared as is,
+  ignoring only surrounding blank space and line-end whitespace. A code fence, an "Output:"
+  prefix or surrounding quotes are forgiven on the model's side only, never removed from
+  the reference.
+- Sentence operations: carrier and content sentences are restricted to text that the
+  sentence splitter sees as exactly one sentence (no "Dr. Lee", no "U.S."), and
+  completion-style placement is not used with sentence operations, whose references are
+  not meaningful on delimiter lines and numbered fake answers.
 - Statistics: per-item scores, averaged over seeds, contrast across conditions, items
-  resampled 10,000 times (`pno/stats/bootstrap.py`).
+  resampled 10,000 times (`pno/stats/bootstrap.py`). The report lists any model scored on
+  fewer items than the others, since metrics use the items common to all models.
 
 ## 6. Known issues in the benchmarks
 

@@ -38,6 +38,8 @@ def main(argv=None):
     ap.add_argument("--placement", default="input_role", choices=["input_role", "user_concat"])
     ap.add_argument("--benchmarks", nargs="+", default=list(BENCHMARKS))
     ap.add_argument("--backend", default=None, choices=["vllm", "hf"])
+    ap.add_argument("--dtype", default=None, choices=["float32", "bfloat16"],
+                    help="weights dtype for generation (merged runs store their update in float32)")
     ap.add_argument("--out", default="outputs/eval")
     ap.add_argument("--config", default=None)
     ap.add_argument("--limit", type=int, default=None, help="first N items per benchmark (smoke tests)")
@@ -68,9 +70,11 @@ def main(argv=None):
 
         backend = a.backend or ecfg["backend"]
         if backend == "hf":
-            gen = make_generator("hf", a.model, adapter_path=a.adapter, batch_size=a.batch_size, device=a.device)
+            gen = make_generator("hf", a.model, adapter_path=a.adapter, batch_size=a.batch_size, device=a.device,
+                                 dtype=a.dtype)
         else:
-            gen = make_generator("vllm", a.model, max_model_len=ecfg["max_model_len"], tokenizer_path=a.tokenizer)
+            gen = make_generator("vllm", a.model, max_model_len=ecfg["max_model_len"], tokenizer_path=a.tokenizer,
+                                 dtype=a.dtype or "bfloat16")
         for b, items in todo.items():
             tok = gen.tok
             if a.tokenizer and a.renderer == "hf" and backend == "hf":

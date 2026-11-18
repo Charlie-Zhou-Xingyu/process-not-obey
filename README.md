@@ -55,8 +55,10 @@ Two environments. If vLLM's pinned packages clash with the training stack, insta
 `PNO_GEN_PYTHON=/path/to/that/python`; generation then runs there and training and scoring
 in the main one. `PNO_BACKEND=hf` avoids vLLM altogether (slower).
 
-Disk. Each merged checkpoint is about 4.6 GB (18 runs). `--cleanup_merged` deletes a run's
-merged weights once its outputs exist; adapters in `runs/` are kept and re-merged on demand.
+Disk. Each merged checkpoint is about 7 GB (18 runs): the tensors the adapter changed are
+stored in float32 so the update is not rounded to bfloat16. `--cleanup_merged` deletes a
+run's merged weights once its outputs exist; adapters in `runs/` are kept and re-merged on
+demand.
 
 ## Third-party material
 

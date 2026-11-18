@@ -25,7 +25,7 @@ from pathlib import Path
 
 from pno import third_party
 from pno.catalog import build_registry
-from pno.catalog.base import sensitivity
+from pno.catalog.base import sensitive_names
 from pno.data.alpaca import carrier_sentences, load_alpaca, make_pools, split_holdout
 from pno.data.conflicts import (BENIGN_POSITIONS, CarrierSampler, TransformSampler, insert_unit, join_units,
                                 process_pair, sample_conflict, target_pair)
@@ -97,23 +97,21 @@ def summarize(reg, items: list[dict], outputs: list[str], sentences: list[str], 
         else:
             it["label"] = label_conflict(o, it)
             conf[it["transform"]][it["label"]] += 1
-    probe_rng = random.Random(0)
-    probes = {"text": [" ".join(probe_rng.sample(sentences, 2)) for _ in range(60)],
-              "lines": ["\n".join(probe_rng.sample(sentences, 3)) for _ in range(60)]}
+    sensitive = set(sensitive_names(reg, sentences))
     table, keep = [], []
     for t in reg:
         if t.name not in acc:
             continue
         a = sum(acc[t.name]) / len(acc[t.name])
-        sens = sensitivity(t, probes[t.unit])
         c = conf.get(t.name, {})
         n_c = sum(c.values())
         row = {"transform": t.name, "source": t.source, "category": t.category, "unit": t.unit,
-               "clean_acc": round(a, 3), "n_clean": len(acc[t.name]), "sensitivity": round(sens, 3), "n_conflict": n_c}
+               "clean_acc": round(a, 3), "n_clean": len(acc[t.name]), "content_sensitive": t.name in sensitive,
+               "n_conflict": n_c}
         for lab in LABELS:
             row[f"conflict_{lab.lower()}"] = round(c.get(lab, 0) / n_c, 3) if n_c else ""
         table.append(row)
-        if a >= threshold and sens >= 0.95:
+        if a >= threshold and t.name in sensitive:
             keep.append(t.name)
     table.sort(key=lambda r: -r["clean_acc"])
     return table, keep
