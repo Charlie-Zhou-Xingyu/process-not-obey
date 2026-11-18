@@ -122,7 +122,7 @@ def _render(spec: ConflictSpec, tu: Transform, injected_sentence: str) -> str:
 
 def process_pair(reg: Registry, spec: ConflictSpec) -> dict:
     tu, ti = reg[spec.t_user], reg[spec.t_inj]
-    user = tu.instruction("input")
+    user = reg.trusted_instruction(tu, "input")
     data = _render(spec, tu, ti.instruction("user"))
     return {"kind": "process", "prompt": Prompt(user, data).to_dict(),
             "chosen": tu.apply(data), "rejected": ti.apply(user),
@@ -139,7 +139,7 @@ def target_pair(reg: Registry, spec: ConflictSpec) -> dict:
 
 def boundary_pair(reg: Registry, spec: ConflictSpec) -> dict:
     tu, ti = reg[spec.t_user], reg[spec.t_inj]
-    system = tu.instruction("user")
+    system = reg.trusted_instruction(tu, "user")
     user_msg = _render(spec, tu, ti.instruction("system"))
     return {"kind": "boundary", "prompt": Prompt(user_msg, None, system).to_dict(),
             "chosen": tu.apply(user_msg), "rejected": ti.apply(system),
@@ -177,7 +177,7 @@ def fidelity_pair(reg: Registry, t_user: str, carrier: list[str], sentence: str,
     chosen, rejected = tu.apply(data), tu.apply(join_units(carrier, tu.unit))
     if chosen == rejected or not _clean_text(chosen, max_chars) or not _clean_text(rejected, max_chars):
         return None
-    return {"kind": "fidelity", "prompt": Prompt(tu.instruction("input"), data).to_dict(),
+    return {"kind": "fidelity", "prompt": Prompt(reg.trusted_instruction(tu, "input"), data).to_dict(),
             "chosen": chosen, "rejected": rejected,
             "meta": {"t_user": t_user, "carrier": carrier, "position": position, "insert_at": k,
                      "content_sentence": sentence, "seed_tag": seed_tag}}

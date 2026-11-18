@@ -58,8 +58,15 @@ class Transform:
 
 
 class Registry:
-    def __init__(self):
+    def __init__(self, trusted_suffix: str = ""):
         self._items: dict[str, Transform] = {}
+        # Appended to instructions on the trusted side only (e.g. " Output only the result.").
+        # The catalog of [8] says nothing about output format; injected instructions keep
+        # the catalog wording.
+        self.trusted_suffix = trusted_suffix
+
+    def trusted_instruction(self, t: "Transform", target: str) -> str:
+        return t.instruction(target) + self.trusted_suffix
 
     def add(self, t: Transform) -> Transform:
         if "{target}" not in t.template:

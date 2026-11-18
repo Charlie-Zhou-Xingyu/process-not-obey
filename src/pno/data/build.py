@@ -68,7 +68,7 @@ class Builder:
     def __init__(self, cfg: dict, keep_path: str | None = None, rows=None, delm_tokens: dict | None = None):
         self.cfg = cfg
         d = self.d = cfg["data"]
-        self.reg = build_registry()
+        self.reg = build_registry(trusted_suffix=d.get("trusted_suffix", ""))
         self.keep = load_keep(keep_path or d.get("keep_file"), self.reg)
         self.inj_pool = self.keep if d.get("injected_from", "keep") == "keep" else self.reg.names()
         self.rows = rows if rows is not None else load_alpaca(_resolve(d.get("alpaca_cache")))

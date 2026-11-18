@@ -156,3 +156,18 @@ def test_training_rows_render(builder):
         assert s.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")
         assert ("<|im_start|>input\n" in s) == (r["prompt"]["data"] is not None)
         assert s.count("<|im_start|>") == 3
+
+
+def test_trusted_suffix_only_on_the_trusted_side(cfg, toy_alpaca):
+    c = copy.deepcopy(cfg)
+    c["data"]["trusted_suffix"] = " Output only the result."
+    b = Builder(c, rows=toy_alpaca, delm_tokens=DELM)
+    comp = b.conflict_rows(0)
+    for p, bd in zip(comp["process"][:30], comp["boundary"][:30]):
+        tu, ti = b.reg[p["meta"]["t_user"]], b.reg[p["meta"]["t_inj"]]
+        assert p["prompt"]["instruction"] == tu.instruction("input") + " Output only the result."
+        assert p["meta"]["injected_sentence"] == ti.instruction("user")          # catalog wording, no suffix
+        assert p["rejected"] == ti.apply(p["prompt"]["instruction"])              # executed on the real user message
+        assert bd["prompt"]["system"] == tu.instruction("user") + " Output only the result."
+    f = b.fidelity_rows(0)[0]
+    assert f["prompt"]["instruction"].endswith(" Output only the result.")

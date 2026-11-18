@@ -23,8 +23,9 @@ def render_items(items: list[dict], renderer: str, tokenizer=None, placement: st
                           placement=placement) for it in items]
 
 
-def save_outputs(path: Path, items: list[dict], outputs: list[str]) -> None:
-    write_jsonl(path, ({**it, "output": o} for it, o in zip(items, outputs)))
+def save_outputs(path: Path, items: list[dict], outputs: list[dict]) -> None:
+    """``outputs`` come from ``generate_full``: ``{"text", "truncated"}`` per item."""
+    write_jsonl(path, ({**it, "output": o["text"], "truncated": o["truncated"]} for it, o in zip(items, outputs)))
 
 
 def load_outputs(path: Path) -> tuple[list[dict], list[str]]:

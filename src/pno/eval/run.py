@@ -79,9 +79,10 @@ def main(argv=None):
                 tok = AutoTokenizer.from_pretrained(a.tokenizer)
             prompts = render_items(items, a.renderer, tok, a.placement)
             max_new = ecfg.get(b, ecfg["secfid"] if b == "secfid_clean" else {})["max_new_tokens"]
-            outs = gen.generate(prompts, GenConfig(max_new_tokens=max_new))
+            outs = gen.generate_full(prompts, GenConfig(max_new_tokens=max_new))
             save_outputs(out_dir / f"{b}.jsonl", items, outs)
-            print(f"[eval] {a.name}/{b}: generated {len(outs)} outputs")
+            print(f"[eval] {a.name}/{b}: generated {len(outs)} outputs "
+                  f"({sum(o['truncated'] for o in outs)} hit the {max_new}-token limit)")
 
     if a.no_score:
         return
@@ -92,7 +93,8 @@ def main(argv=None):
             continue
         items, outs = load_outputs(path)
         per_item = mod.score(items, outs, cfg)
-        summary = {"model": a.name, "benchmark": b, **mod.summarize(per_item)}
+        summary = {"model": a.name, "benchmark": b, **mod.summarize(per_item),
+                   "truncated_outputs": sum(bool(it.get("truncated")) for it in items)}
         save_scores(out_dir, b, per_item, summary)
         print(f"[eval] {a.name}/{b}: " + json.dumps(summary))
 

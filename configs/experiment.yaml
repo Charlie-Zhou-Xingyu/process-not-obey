@@ -20,6 +20,7 @@ data:
   carrier_lines: [2, 4]            # carrier length for line-unit transforms (lines)
   injection_placement: {start: 0.45, end: 0.45, completion: 0.10}   # SecAlign++ scheme [4], all security data
   max_target_chars: 1500
+  trusted_suffix: ""               # appended to trusted instructions only; "" = the catalog wording of [8]
   gen_max_new_tokens: 1024         # self-generated targets; replies that hit the limit are dropped
   gen_temperature: 0.0             # [4] samples at 0.8; greedy keeps targets reproducible
 
