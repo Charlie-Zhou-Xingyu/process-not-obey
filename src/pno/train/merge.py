@@ -31,16 +31,28 @@ def resolve_local(base: str) -> Path:
     return Path(snapshot_download(base))
 
 
-def patch_chat_template(out_dir: Path) -> None:
+def patch_chat_template(out_dir: Path) -> bool:
+    """Make the saved tokenizer's template accept the ``input`` role (Qwen templates only;
+    other templates, e.g. Meta-SecAlign's Llama one, already render it and are left as is)."""
+    patched = False
     tc_path = out_dir / "tokenizer_config.json"
     if tc_path.exists():
         tc = json.loads(tc_path.read_text())
         if isinstance(tc.get("chat_template"), str):
-            tc["chat_template"] = qwen_template_with_input_role(tc["chat_template"])
-            tc_path.write_text(json.dumps(tc, ensure_ascii=False, indent=2))
+            try:
+                tc["chat_template"] = qwen_template_with_input_role(tc["chat_template"])
+                tc_path.write_text(json.dumps(tc, ensure_ascii=False, indent=2))
+                patched = True
+            except ValueError:
+                pass
     jinja = out_dir / "chat_template.jinja"
     if jinja.exists():
-        jinja.write_text(qwen_template_with_input_role(jinja.read_text()))
+        try:
+            jinja.write_text(qwen_template_with_input_role(jinja.read_text()))
+            patched = True
+        except ValueError:
+            pass
+    return patched
 
 
 def export_merged(base: str, adapter: str, out: str, check_tied: bool = True) -> dict:
