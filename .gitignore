@@ -13,3 +13,4 @@ data/generated/
 *.safetensors
 wandb/
 third_party/
+server_results/
