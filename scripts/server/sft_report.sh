@@ -20,3 +20,4 @@ for c in ("C4_process_fidelity", "C2_ignore_fidelity"):
         except Exception as e:
             print(root, c, "no log:", e)
 PY
+python /workspace/pair_diff.py $V/C4_process_fidelity-seed0 C4_process_fidelity-seed0 $V/C2_ignore_fidelity-seed0 C2_ignore_fidelity-seed0 $V/C2_ignore_fidelity-seed0 C1_ignore_ordinary-seed0
