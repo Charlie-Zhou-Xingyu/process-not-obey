@@ -189,3 +189,22 @@ def test_loss_spec_accepts_one_loss_or_a_weighted_list():
     with pytest.raises(ValueError):
         loss_spec({"loss_type": []})
 
+
+
+def test_a_condition_half_can_be_shared_by_two_components():
+    import pytest
+
+    from pno.data.build import Builder, half_rows
+
+    comp = {k: [{"kind": k, "prompt": {"instruction": f"{k}{i}"}, "chosen": "a", "rejected": "b"} for i in range(4)]
+            for k in ("ignore", "process", "ordinary", "fidelity")}
+    assert half_rows(comp, "ignore") == comp["ignore"]                              # the six conditions: unchanged
+    mixed = half_rows(comp, ["ignore", "process"])
+    assert [r["prompt"]["instruction"] for r in mixed] == ["ignore0", "ignore1", "process0", "process1"]
+    rows = Builder.condition(None, comp, {"security": ["ignore", "process"], "benign": "ordinary"}, 0)
+    kinds = sorted(r["kind"] for r in rows)
+    assert kinds == ["ignore"] * 2 + ["ordinary"] * 4 + ["process"] * 2 and len({r["id"] for r in rows}) == 8
+    same = Builder.condition(None, comp, {"security": "process", "benign": "fidelity"}, 0)
+    assert sorted(r["kind"] for r in same) == ["fidelity"] * 4 + ["process"] * 4
+    with pytest.raises(ValueError):
+        half_rows({"a": [1, 2, 3], "b": [1, 2, 3]}, ["a", "b"])                     # 3 rows cannot be halved

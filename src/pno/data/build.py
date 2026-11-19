@@ -142,10 +142,29 @@ class Builder:
         return comp
 
     def condition(self, comp: dict[str, list[dict]], spec: dict, seed) -> list[dict]:
-        rows = comp[spec["security"]] + comp[spec["benign"]]
+        rows = half_rows(comp, spec["security"]) + half_rows(comp, spec["benign"])
         rows = [dict(r, id=f"s{seed}-{r['kind']}-{i}") for i, r in enumerate(rows)]
         random.Random(f"mix|{seed}").shuffle(rows)
         return rows
+
+
+def component_names(key) -> list[str]:
+    """A condition's security or benign half names one component, or a list that shares the half."""
+    return [key] if isinstance(key, str) else list(key)
+
+
+def half_rows(comp: dict[str, list[dict]], key) -> list[dict]:
+    """Rows of one half of a condition. One component: all of its rows. A list of k components:
+    the first 1/k of each, so the half keeps its size (rows of a component are in sampling
+    order, so a prefix is a random subset)."""
+    names = component_names(key)
+    if len(names) == 1:
+        return list(comp[names[0]])
+    sizes = {len(comp[n]) for n in names}
+    if len(sizes) != 1 or sizes.pop() % len(names):
+        raise ValueError(f"cannot share one half equally among {names}: sizes {[len(comp[n]) for n in names]}")
+    per = len(comp[names[0]]) // len(names)
+    return [r for n in names for r in comp[n][:per]]
 
 
 def main(argv=None):
@@ -197,7 +216,7 @@ def main(argv=None):
             write_jsonl(sd / "components" / f"{kind}.jsonl", rows)
         manifest["seeds"][s] = {}
         for name, spec in cfg["conditions"].items():
-            if spec["security"] not in comp or spec["benign"] not in comp:
+            if any(n not in comp for n in component_names(spec["security"]) + component_names(spec["benign"])):
                 print(f"[build] seed {s}: skip {name} (needs generated targets)")
                 continue
             rows = b.condition(comp, spec, s)
