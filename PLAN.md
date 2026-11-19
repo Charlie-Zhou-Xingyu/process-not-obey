@@ -146,12 +146,12 @@ Proposal 没写到这么细，下面是实现时定下来的。前 5 条会影�
 
 ## 8. 需要你们提供或决定的事
 
-1. **服务器**（11/18 已在 Vast.ai 上比过价，待选定）。要求：
+1. **服务器**：11/18 已在 Vast.ai 租好。实例 61344694，RTX 4090 48 GB（韩国），$0.480/小时（含 100 GB 盘），最长可租 3 个月；停机后只收磁盘约 $0.03/小时，销毁后不收费。代码在服务器的 `/workspace/process-not-obey`（从本机 rsync 过去的，服务器上没有 GitHub 凭据）。连接方式看实例卡片上的 "SSH connection"，用账号里登记的 `rqa-gpu` 那把密钥。选机器时的要求：
    - 单卡，显存 ≥ 24 GB，Ampere 或更新的架构（要用 bfloat16；Titan RTX、Quadro RTX 8000 这类 Turing 卡不行）。
    - 驱动支持 CUDA 13.0 以上（Vast 上看 "Max CUDA"）：vLLM 0.34.0 把 torch 固定在 2.14.0，它自带的是 CUDA 13.0 运行库。
    - 内存 ≥ 48 GB，磁盘 100 GB（三个 8B 参考模型约 48 GB，加环境和 Qwen；默认的运行时 LoRA 模式不产生合并 checkpoint。若退到合并模式，每个约 7 GB，用 `--cleanup_merged` 边评测边删）。
    - 可靠性 ≥ 99%，按需计费（不要可抢占的），避开中国大陆机房（Hugging Face 访问不稳）。
-2. **Hugging Face 权限**：`meta-llama/Llama-3.1-8B-Instruct` 和 `google/embeddinggemma-300m` 都要先在网页上同意协议。Meta-SecAlign-8B 和 SecPO 的 Llama 模型用的是 `Sizhe-Chen/` 下不设限的合并版。
+2. **Hugging Face 权限**：`meta-llama/Llama-3.1-8B-Instruct` 和 `google/embeddinggemma-300m` 的协议都已同意（11/18）。还差一步只能本人做：在服务器上执行 `hf auth login` 填入自己的 token，否则这两个模型下载不了（影响 SecFid 翻译/编辑题的打分和未防御 Llama 这个参考模型）。Meta-SecAlign-8B 和 SecPO 的 Llama 模型用的是 `Sizhe-Chen/` 下不设限的合并版。
 3. **第 6 节前 5 条**是否接受。
 4. 队友的 GitHub 账号（仓库是私有的，要加 collaborator）。
 
