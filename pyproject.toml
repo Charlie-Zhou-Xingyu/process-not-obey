@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pno"
 version = "0.1.0"
 description = "Learning to Process, Not Obey: security-fidelity trade-offs in prompt-injection defense (CS182 project)"
-requires-python = ">=3.10"
+requires-python = ">=3.11"   # vLLM needs 3.11+
 dependencies = [
     "numpy",
     "pyyaml",

@@ -25,7 +25,7 @@ PRIMARY = "safe_processed"
 def load(cfg: dict, builder=None) -> list[dict]:
     from pno.data.build import Builder
 
-    b = builder or Builder(cfg)
+    b = builder or Builder(cfg, require_keep=True)   # items depend on the keep-list: never fall back
     n = cfg["eval"]["conflict"].get("n_per_type", 300)
     items = []
     specs = b.conflict_specs("heldout", n, sentences=b.heldout_sentences, part="heldout-conflict")

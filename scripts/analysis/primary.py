@@ -1,6 +1,6 @@
 """Seed-0 primary comparison on SecFid with a paired item bootstrap (10,000 resamples), on all
 items and without the counting task (where C3's label is inflated by a count bias)."""
-import json, sys, os
+import json, os
 import numpy as np
 E = "outputs/eval"
 def scores(m):

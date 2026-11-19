@@ -19,6 +19,7 @@ outputs) and ``PNO_PYTHON`` runs everything else. Both default to the current in
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shlex
@@ -26,7 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from pno.io import REPO_ROOT, load_config
+from pno.io import CONFIG_ENV, REPO_ROOT, load_config
 
 PY = os.environ.get("PNO_PYTHON", sys.executable)
 GEN_PY = os.environ.get("PNO_GEN_PYTHON", sys.executable)
@@ -94,13 +95,41 @@ def merge_cmd(cfg: dict, p: dict) -> list:
     return [PY, "-m", "pno.train.merge", "--base", cfg["base_model"], "--adapter", p["run"], "--out", p["merged"]]
 
 
+# training settings that do not change the trained weights
+_LOG_ONLY = ("logging_steps", "report_to")
+
+
+def stale_run_reason(cfg: dict, data: Path, run: Path) -> str | None:
+    """Why an existing run directory does not match the current config or data, or None.
+
+    A run is reused only if its recorded training settings equal the config's ``training``
+    section (apart from logging options) and, when the log records it, its training file
+    is byte-identical to the current one. Otherwise reusing it would silently report one
+    recipe under another's settings (e.g. a plain-DPO run after switching to [sigmoid, sft])."""
+    log = json.loads((run / "train_log.json").read_text())
+    have = {k: v for k, v in log.get("training_cfg", {}).items() if k not in _LOG_ONLY}
+    want = {k: v for k, v in cfg["training"].items() if k not in _LOG_ONLY}
+    if have != want:
+        diff = sorted(k for k in set(have) | set(want) if have.get(k) != want.get(k))
+        return f"training settings differ: {', '.join(diff)}"
+    sha = log.get("train_sha256")
+    if sha and data.exists() and hashlib.sha256(data.read_bytes()).hexdigest() != sha:
+        return f"training data changed since this run ({data.name})"
+    return None
+
+
 def train(cfg: dict, seeds: list[int], conds: list[str], dry: bool) -> None:
     for seed in seeds:
         for cond in conds:
             p = paths(cond, seed)
             if not p["data"].exists() and not dry:
                 raise SystemExit(f"missing {p['data']}; build the data first (scripts/20_build_data.sh)")
-            if not (p["run"] / "train_log.json").exists():
+            if (p["run"] / "train_log.json").exists():
+                why = stale_run_reason(cfg, p["data"], p["run"])
+                if why:
+                    raise SystemExit(f"{p['run']} exists but does not match: {why}. Move it away (and its "
+                                     f"outputs/eval/{run_name(cond, seed)}) or use a separate copy of the repo.")
+            else:
                 sh([PY, "-m", "pno.train.dpo", "--train", p["data"], "--model", cfg["base_model"],
                     "--out", p["run"], "--seed", seed, "--renderer", cfg["renderer"]], dry)
             if adapter_mode(cfg) == "merge" and not (p["merged"] / "pno_merge_info.json").exists():
@@ -111,8 +140,17 @@ def evaluate_one(cfg: dict, name: str, model: str, renderer: str, benches: list[
                  tokenizer: str | None = None, limit: int | None = None, dtype: str | None = None,
                  adapter: str | None = None, score: bool = True) -> None:
     out = eval_dir(name)
+    if adapter and not dry:
+        log = Path(adapter) / "train_log.json"
+        old = [b for b in benches if (out / f"{b}.jsonl").exists() and log.exists()
+               and (out / f"{b}.jsonl").stat().st_mtime < log.stat().st_mtime]
+        if old:
+            raise SystemExit(f"outputs in {out} ({', '.join(old)}) are older than the run they evaluate "
+                             f"({log}); move them away before evaluating the retrained run")
     todo_gen = [b for b in benches if not (out / f"{b}.jsonl").exists()]
-    todo_score = [b for b in benches if not (out / f"{b}_summary.json").exists()] if score else []
+    # score what is generated now, what has no summary, and outputs newer than their summary
+    todo_score = [b for b in benches if b in todo_gen or not (out / f"{b}_summary.json").exists()
+                  or (out / f"{b}.jsonl").stat().st_mtime > (out / f"{b}_summary.json").stat().st_mtime] if score else []
     common = ["--name", name, "--renderer", renderer] + (["--limit", limit] if limit else [])
     if todo_gen:
         cmd = [GEN_PY, "-m", "pno.eval.run", *common, "--model", model, "--backend", backend(cfg),
@@ -257,6 +295,8 @@ def main(argv=None):
                          "scorer is unavailable (SecFid needs the gated EmbeddingGemma)")
     ap.add_argument("--dry_run", action="store_true")
     a = ap.parse_args(argv)
+    if a.config:   # every step launched below reads the same file (pno.io.load_config)
+        os.environ[CONFIG_ENV] = str(Path(a.config).resolve())
     cfg = load_config(a.config)
     seeds = a.seeds if a.seeds is not None else cfg["seeds"]
     conds = a.conditions if a.conditions is not None else list(cfg["conditions"])

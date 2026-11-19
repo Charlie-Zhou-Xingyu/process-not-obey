@@ -1,0 +1,23 @@
+# Exact versions installed on the GPU server (RTX 4090, Python 3.12.3, NVIDIA driver with
+# CUDA 13.0) when the seed-0 results were produced (2026-11-18, server_results/setup.log).
+# scripts/00_setup_server.sh installs the latest compatible versions; to reproduce exactly:
+#   pip install -r requirements-server.txt && pip install -e . --no-deps
+vllm==0.34.0
+torch==2.14.0
+transformers==5.22.2
+trl==1.18.1
+peft==0.21.3
+accelerate==1.16.0
+datasets==5.2.0
+safetensors==0.8.0
+huggingface_hub==2.4.0
+sentence-transformers==6.3.0
+lm-eval[ifeval]==0.4.13
+pandas==3.1.1
+numpy==2.3.5
+pyyaml==6.0.3
+tqdm==4.70.1
+pytest==9.2.0
+# optional: optimized Qwen3.5 kernels (training speed only)
+flash-linear-attention==0.6.0
+causal-conv1d==1.7.0
