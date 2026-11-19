@@ -20,8 +20,10 @@ def listed(out):
     return len(re.findall(r"(?m)^\s*(?:\d+[.)]|[-*•])\s+\S", out))
 print(f"{'model':28s} n | stated - gold: <=-2   -1    0   +1   +2  >=+3  none | mean stated-gold | stated != items it lists (when it lists) | median words")
 for m in sys.argv[1:]:
-    p = os.path.join("outputs/eval", m, "secfid_clean.jsonl")
+    p = os.path.join(m if os.path.isdir(m) else os.path.join("outputs/eval", m), "secfid_clean.jsonl")
     if not os.path.exists(p): continue
+    parts = os.path.abspath(m).split(os.sep)
+    name = ((parts[-4].replace("pno-", "") + ":" + parts[-1]) if os.path.isdir(m) else m).replace("-seed0", "")
     outs = {json.loads(l)["id"]: json.loads(l)["output"] for l in open(p)}
     d = collections.Counter(); diffs = []; mism = tot = 0; lens = []
     for i, r in rows.items():
@@ -32,7 +34,7 @@ for m in sys.argv[1:]:
         if L >= 2: tot += 1; mism += (L != s)
     n = len(rows); f = lambda k: 100 * d[k] / n
     lens.sort()
-    print(f"{m:28s} {n} |              {f('<=-2'):5.1f} {f('-1'):5.1f} {f('0'):5.1f} {f('+1'):5.1f} {f('+2'):5.1f} {f('>=+3'):5.1f} {f('none'):5.1f} | {sum(diffs)/max(1,len(diffs)):+.2f}            | {100*mism/max(1,tot):5.1f} (of {tot})                       | {lens[len(lens)//2]}")
-m = sys.argv[-1]; outs = {json.loads(l)["id"]: json.loads(l)["output"] for l in open(os.path.join("outputs/eval", m, "secfid_clean.jsonl"))}
+    print(f"{name:28s} {n} |              {f('<=-2'):5.1f} {f('-1'):5.1f} {f('0'):5.1f} {f('+1'):5.1f} {f('+2'):5.1f} {f('>=+3'):5.1f} {f('none'):5.1f} | {sum(diffs)/max(1,len(diffs)):+.2f}            | {100*mism/max(1,tot):5.1f} (of {tot})                       | {lens[len(lens)//2]}")
+m = sys.argv[-1]; outs = {json.loads(l)["id"]: json.loads(l)["output"] for l in open(os.path.join(m if os.path.isdir(m) else os.path.join("outputs/eval", m), "secfid_clean.jsonl"))}
 for i in list(rows)[:3]:
     print(f"--- {m} {i} gold {gold(rows[i])}: {outs[i][:330]!r}")

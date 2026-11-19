@@ -40,5 +40,5 @@ def table(root, title):
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "server_results")
 table(root / "outputs/eval", "main study, seed 0")
 table(root / "early/eval", "early SecFid scoring (scratch copy)")
-for v in ("pno-sec2x", "pno-secbig"):
+for v in ("pno-nocount", "pno-sec2x", "pno-secbig"):
     table(root / "variants" / v / "outputs/eval", f"variant {v}")
