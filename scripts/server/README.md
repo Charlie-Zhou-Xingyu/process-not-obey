@@ -29,7 +29,9 @@ of the last condition would have come 2 hours later.
 | `run_after.sh` | `after` | the three 8B reference models on the remaining benchmarks, anything still missing, report, gate summary; removes `.hold_stop` when it ends | `.after_done` |
 
 In `run_seed0b.sh` and `run_after.sh` a failing step is reported (`STEP FAILED`) and the next
-one still runs. `.hold_stop` tells the script on the laptop (wait, back up, verify by sha256,
+one still runs. From Nov 19 07:50 UTC the scripts that had not started yet (`run_cfg_variant.sh`,
+`run_extras.sh`, `run_after.sh`, `run_c1_variant.sh`) also try a failing step once more after
+five minutes: the server lost its network (and name resolution) for 2 and 6 minutes that night. `.hold_stop` tells the script on the laptop (wait, back up, verify by sha256,
 `vastai stop instance`) that work is still queued.
 
 `run_c1_variant.sh` and `run_keep_variant.sh` work in a copy of the repo (`/workspace/pno-<name>`) with its own config,
