@@ -10,6 +10,9 @@ holds `outputs/eval` (they import `pno`, except `summarize.py` and `bytask.py`).
 | `primary.py` | condition differences with a paired item bootstrap, with and without the counting task |
 | `count_bias.py <models>` | counting / extraction: is a `processed` label on the attacked input also given on the clean input of the same item (a general "one more" habit)? |
 | `count_dist.py <models>` | counting on clean inputs: the stated count minus the gold count, and whether it matches the items the output lists |
+| `pair_diff.py A B [A2 B2 ...]` | paired differences between two runs on every benchmark both have (item bootstrap) |
+| `sep_review.py`, `sep_truncation.py` | SEP per attack, differences between runs, examples; whether outputs cut at the token limit hide attacks |
+| `conflict_matrix.py <models>`, `conflict_by_transform.py`, `conflict_examples.py` | held-out conflict benchmark by trusted transform; example outputs |
 | `edit_success.py <models>` | editing: was the requested edit applied (items whose edit can be read off the instruction), and is the probe sentence kept verbatim? |
 | `edit_check.py <models>` | editing / translation: word-level similarity of the output to the input and to the references |
 

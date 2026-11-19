@@ -16,12 +16,14 @@ outputs: in its order each model generated all six benchmarks before the next mo
 (about 25 minutes per model, 15 of them for SEP's 12,000 prompts), so the headline benchmark
 of the last condition would have come 2 hours later.
 
-## Second order (`requeue.sh`, Nov 19 05:12 UTC; `requeue2.sh` at 05:43 inserted `nocount`)
+## Second order (`requeue.sh`, Nov 19 05:12 UTC; `requeue2.sh`, `requeue3.sh` and `requeue4.sh` inserted `nocount`, `sft` and `mix`)
 
 | script | tmux session | what it does | marker |
 |---|---|---|---|
 | `run_seed0b.sh` | `seed0` | SecFid (generate + score) for C3 and C5, then the other runs; gate 2 (Meta-SecAlign-8B and undefended Llama-3.1-8B-Instruct on SecFid); the other benchmarks for the six runs and the base model; report | `.seed0_done` |
 | `run_keep_variant.sh nocount '^count_' C3_process_ordinary C4_process_fidelity` | `nocount` | diagnostic added by `requeue2.sh`: C3 and C4 retrained with the two counting transforms removed from the pool, SecFid only (`nocount_report.sh` prints the comparison) | `.nocount_done` |
+| `run_cfg_variant.sh sft ...` (twice: C4, then C2 with SEP) | `sft` | diagnostic added by `requeue3.sh`: DPO plus the preferred response's per-token NLL (`loss_type: [sigmoid, sft]`), same training data; the copy is set up by `prepare_cfg_variant.sh` and holds code newer than the main copy (`sft_report.sh` prints the comparison) | `.sft_done` |
+| `run_cfg_variant.sh mix ... C7_mix_ordinary C8_mix_fidelity` | `mix` | two extra conditions added by `requeue4.sh`: the security half is 1,000 ignore-style + 1,000 process-style pairs; set up by `prepare_mix_variant.sh` (`mix_report.sh`) | `.mix_done` |
 | `run_extras.sh` | `extras` | base model with instruction and data in one user message; then `run_c1_variant.sh sec2x 4000 1 1.25` (the proposal's gate 4 fallback) | `.extras_done` |
 | `run_c1_variant.sh secbig 7500 3 1.2756` | `big` | C1 with 7,500 security pairs and 3 epochs: does content dropping appear with about 11 times the ignore-style training? | `.big_done` |
 | `run_after.sh` | `after` | the three 8B reference models on the remaining benchmarks, anything still missing, report, gate summary; removes `.hold_stop` when it ends | `.after_done` |

@@ -9,3 +9,4 @@ python3 /workspace/bytask.py /workspace/pno-nocount
 M="base_qwen35_2b C5_target_ordinary-seed0 C3_process_ordinary-seed0 $V/C3_process_ordinary-seed0 C4_process_fidelity-seed0 $V/C4_process_fidelity-seed0"
 python /workspace/count_bias.py $M 2>&1 | sed -n '/=== counting/,/^--- clean item/p' | grep -v "^--- clean"
 python /workspace/count_dist.py $M 2>&1 | grep -v "^---"
+python /workspace/pair_diff.py $V/C3_process_ordinary-seed0 C3_process_ordinary-seed0 $V/C4_process_fidelity-seed0 C4_process_fidelity-seed0 $V/C3_process_ordinary-seed0 C5_target_ordinary-seed0
