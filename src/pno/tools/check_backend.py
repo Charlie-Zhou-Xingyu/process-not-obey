@@ -102,6 +102,8 @@ def main(argv=None):
 
     cfg = load_config(a.config)
     base = cfg["base_model"]
+    if os.environ.get("PNO_BACKEND") == "hf":
+        a.skip_vllm = True          # the run is transformers-only (e.g. the rehearsal): nothing to compare
     py = os.environ.get("PNO_PYTHON", sys.executable)
     gen_py = os.environ.get("PNO_GEN_PYTHON", sys.executable)
     out_dir = Path(a.out) if Path(a.out).is_absolute() else REPO_ROOT / a.out
