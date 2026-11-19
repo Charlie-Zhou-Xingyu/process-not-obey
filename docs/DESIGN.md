@@ -119,7 +119,21 @@ check: gate 4 tests whether the baseline changes behavior at this scale.
 
 Software checked locally (unit tests and the full rehearsal, on CPU): torch 2.15.0 with
 transformers 5.23.0, and torch 2.14.0 with transformers 5.22.2, the versions vLLM 0.34.0 pins on
-the server; trl 1.18.1 and peft 0.21.3 in both.
+the server; trl 1.18.1 and peft 0.21.3 in both. On the server (RTX 4090, 2026-11-18): the
+unit and end-to-end tests on CPU and the full rehearsal on the GPU, with torch 2.14.0+cu130,
+transformers 5.22.2, vLLM 0.34.0, trl 1.18.1, peft 0.21.3 and the optimized Qwen3.5 kernels.
+
+Three properties of that environment that the code handles (`pno.gen.backends`):
+transformers calls the `causal-conv1d` and `flash-linear-attention` kernels on every device
+once they are importable, and they are CUDA-only, so they are hidden whenever a model runs
+on CPU; the container sees 192 cores but may use about 26, so torch's thread pool is capped
+at the cgroup quota in our own processes (vLLM manages its engine's threads itself); and
+Qwen3.5's model config names `<|endoftext|>` as the end token while the tokenizer names
+`<|im_end|>`, so the transformers backend stops on both, as vLLM does.
+
+Gate 1 uses 100 prompts per transform. vLLM's greedy outputs are not bit-identical between
+runs: with 25 prompts, two runs on the same prompts kept different sets (one transform at
+0.80 and then 0.76).
 TRL receives prompts as plain strings and appends `<|im_end|>` to both responses.
 
 Serving trained runs. By default a trained run is evaluated as Meta-SecAlign evaluates its
