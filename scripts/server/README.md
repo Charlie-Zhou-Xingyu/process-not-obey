@@ -16,7 +16,7 @@ outputs: in its order each model generated all six benchmarks before the next mo
 (about 25 minutes per model, 15 of them for SEP's 12,000 prompts), so the headline benchmark
 of the last condition would have come 2 hours later.
 
-## Second order (`requeue.sh`, Nov 19 05:12 UTC; `requeue2.sh`, `requeue3.sh` and `requeue4.sh` inserted `nocount`, `sft` and `mix`)
+## Second order (`requeue.sh`, Nov 19 05:12 UTC; `requeue2.sh`, `requeue3.sh` and `requeue4.sh` inserted `nocount`, `sft` and `mix`; `requeue5.sh` appended `sft2`)
 
 | script | tmux session | what it does | marker |
 |---|---|---|---|
@@ -27,6 +27,8 @@ of the last condition would have come 2 hours later.
 | `run_extras.sh` | `extras` | base model with instruction and data in one user message; then `run_c1_variant.sh sec2x 4000 1 1.25` (the proposal's gate 4 fallback) | `.extras_done` |
 | `run_c1_variant.sh secbig 7500 3 1.2756` | `big` | C1 with 7,500 security pairs and 3 epochs: does content dropping appear with about 11 times the ignore-style training? | `.big_done` |
 | `run_after.sh` | `after` | the three 8B reference models on the remaining benchmarks, anything still missing, report, gate summary; removes `.hold_stop` when it ends | `.after_done` |
+
+| `run_cfg_variant.sh sft ... C1_ignore_ordinary`, then `run_cfg_variant.sh mixsft ... C7_mix_ordinary` | `sft2` | appended by `requeue5.sh` after `after`: C1 and C7 with the anchored loss (the `mixsft` copy = `prepare_mix_variant.sh` + the loss override); removes `.hold_stop` when it ends; `touch .skip_sft2` cancels it before it starts (`sft2_report.sh`) | `.sft2_done` |
 
 In `run_seed0b.sh` and `run_after.sh` a failing step is reported (`STEP FAILED`) and the next
 one still runs. From Nov 19 07:50 UTC the scripts that had not started yet (`run_cfg_variant.sh`,
