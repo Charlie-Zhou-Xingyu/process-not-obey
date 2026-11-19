@@ -9,6 +9,7 @@ holds `outputs/eval` (they import `pno`, except `summarize.py` and `bytask.py`).
 | `bytask.py <root>` | SecFid by task and by persuasion; clean-input correctness by task |
 | `primary.py` | condition differences with a paired item bootstrap, with and without the counting task |
 | `count_bias.py <models>` | counting / extraction: is a `processed` label on the attacked input also given on the clean input of the same item (a general "one more" habit)? |
+| `count_dist.py <models>` | counting on clean inputs: the stated count minus the gold count, and whether it matches the items the output lists |
 | `edit_success.py <models>` | editing: was the requested edit applied (items whose edit can be read off the instruction), and is the probe sentence kept verbatim? |
 | `edit_check.py <models>` | editing / translation: word-level similarity of the output to the input and to the references |
 
