@@ -1,71 +1,110 @@
-# 推进计划：Learning to Process, Not Obey
+# Plan: Learning to Process, Not Obey
 
-更新于 2026-11-19。对应 Proposal v4。整条流程的完整介绍见工作文档《Process-Not-Obey：实验流程工作文档》（https://claude.ai/artifact/C3sQ5aV2vy8ZUQ4oxowDvR ，需要作者先分享才能打开）。代码讲解见 `docs/WALKTHROUGH.md`，设置出处见 `docs/DESIGN.md`（英文），所有数字在 `configs/experiment.yaml`。
+Detailed results have moved to [`docs/RESULTS.md`](docs/RESULTS.md). Section numbers below are
+unchanged; section 7 now only points there.
 
-## 0. 一页看懂：我们在做什么实验
+Updated 2026-11-19. Matches Proposal v4. The code walkthrough is in `docs/WALKTHROUGH.md`, the
+sources of each setting are in `docs/DESIGN.md`, and every number used by the code is in
+`configs/experiment.yaml`.
 
-**要回答的问题。** 模型读网页、邮件这类外部内容时，里面可能夹着一句"指令"（prompt injection）。现在的安全训练教模型"无视"这句话，副作用是连正常内容也一起丢掉（比如让它翻译一段话，它把那句话跳过不翻）。我们想验证：改成教模型"把这句话当成普通内容来处理（照样翻译、照样计数），但不去执行它"，能不能同样安全、又少丢内容。
+## 0. Overview: what the experiment is
 
-**做法。** 同一个基座模型（Qwen3.5-2B），用六种不同的训练数据各训练一次（每种 4,000 对样本，3 个随机种子，一共 18 次训练），再用同一套考题比较。
+**The question.** When a model reads external content such as web pages or emails, the content
+may contain an "instruction" (prompt injection). Current security training teaches the model to
+ignore that sentence. The side effect is that the model also drops ordinary content (for
+example, asked to translate a passage, it skips that sentence). We test whether teaching the
+model instead to "process the sentence as ordinary content (translate it, count it, as usual)
+but not execute it" is just as secure and drops less content.
 
-| 条件 | 训练时教它什么 | 用来回答什么 |
+**Method.** One base model (Qwen3.5-2B), trained once on each of six training sets (4,000 pairs
+each, 3 random seeds, 18 training runs in all), then compared on the same benchmarks.
+
+| condition | what training teaches | what it answers |
 |---|---|---|
-| C1 ignore + ordinary | 无视注入句（现有的标准做法） | 基线 |
-| C2 ignore + fidelity | 无视注入句，另外加"别丢内容"的样本 | 已有的修补办法够不够 |
-| C3 process + ordinary | 把注入句当内容处理 | **我们的方法** |
-| C4 process + fidelity | 两样都加 | 两者能不能叠加 |
-| C5 target control | 和 C3 的输入完全一样，但教它把注入句删掉再处理 | **主对照**：C3 比它好，才说明起作用的是"处理"本身 |
-| C6 boundary control | 和 C3 同样的冲突，但放在 system / user 两条消息之间 | 效果是否依赖"指令 / 数据"这条边界 |
+| C1 ignore + ordinary | ignore the injected sentence (the current standard recipe) | baseline |
+| C2 ignore + fidelity | ignore the injected sentence, plus pairs that teach "do not drop content" | is the existing repair enough |
+| C3 process + ordinary | process the injected sentence as content | **our method** |
+| C4 process + fidelity | both | do the two add up |
+| C5 target control | exactly the same inputs as C3, but teaches deleting the injected sentence before processing | **primary control**: only if C3 beats it is "processing" itself the active ingredient |
+| C6 boundary control | the same conflicts as C3, but placed between the system and user messages | does the effect depend on the instruction / data boundary |
 
-**考题。**
+**Benchmarks.**
 
-| 评测 | 测什么 |
+| benchmark | what it measures |
 |---|---|
-| SecFid（主指标） | 1,168 道带注入的题。看 safe-processing rate：注入句被当内容处理了、并且没被执行 |
-| SEP、transfer attack | 安全性：换别的攻击写法，模型会不会照做 |
-| IFEval | 训练有没有把模型正常听指令的能力弄坏 |
-| SecFid 干净输入、held-out 冲突题 | 辅助：模型本来会不会做这些任务；有没有学会训练里教的东西 |
+| SecFid (primary metric) | 1,168 items with injections. Safe-processing rate: the injected sentence is processed as content and not executed |
+| SEP, transfer attack | security: with other attack phrasings, does the model comply |
+| IFEval | whether training damaged ordinary instruction following |
+| SecFid clean inputs, held-out conflicts | auxiliary: can the model do these tasks at all; did it learn what training taught |
 
-**四个 gate（关卡）。** 正式训练前的检查，每一项不过都有对应的退路（第 5 节）。
+**Four gates.** Checks before the main training runs; each has a fallback if it fails
+(section 5).
 
-| gate | 检查什么 | 为什么要查 |
+| gate | what it checks | why |
 |---|---|---|
-| 0 | vLLM（快的推理引擎）能不能跑 Qwen3.5、输出和 transformers 是否一致 | 评测全靠它，不一致的话后面的数字都不可信 |
-| 1 | 113 种文本操作里，基座模型本来就能做对的有哪些 | 只用它会做的操作造数据和出题。这样模型答错时才能归因于"被注入带偏"，而不是"本来就不会" |
-| 2 | 我们的 SecFid 打分能否复现论文里发表的数字 | 打分代码是我们按规则重写的，要先证明没写错 |
-| 3 | 基座模型在 SecFid 上是否真的会被攻击、干净输入上能否做对题 | 基座本来就不上当，或者本来就不会做题，实验就没有意义 |
-| 4 | C1 训练后是否出现"丢内容"的现象 | 这是我们要修的问题，得先在这个规模上复现出来 |
+| 0 | can vLLM (the fast inference engine) run Qwen3.5, and do its outputs match transformers | all evaluation depends on it; if they disagree, no later number can be trusted |
+| 1 | which of 113 text operations the base model can already do correctly | data and test items use only operations it can do, so that a wrong answer can be attributed to the injection, not to inability |
+| 2 | can our SecFid scoring reproduce the paper's published numbers | we re-implemented the scoring from the rules, so we must show it is correct |
+| 3 | is the base model actually vulnerable on SecFid, and can it do the tasks on clean inputs | if the base model does not fall for injections, or cannot do the tasks, the experiment is meaningless |
+| 4 | does C1 training produce content dropping | this is the problem we want to fix, so it must first reproduce at this scale |
 
-## 1. 现在在哪
+## 1. Status
 
-**已完成**
+**Done**
 
-- 整条流水线的代码和测试（83 个测试，本机和服务器上都通过）。
-- 服务器环境：Vast.ai 的 RTX 4090 48 GB。torch 2.14.0、transformers 5.22.2、vLLM 0.34.0、trl 1.18.1、peft 0.21.3。
-- 彩排：在服务器的 GPU 上用微型模型把 gate、六个条件的训练、六个评测、报告、合并导出全部跑通（`PNO_DEVICE=cuda bash scripts/rehearsal.sh`）。
-- gate 0 通过，gate 1 有结果（第 7 节）。
-- 训练数据：基座模型生成了 17,969 条目标回答，其中 16,288 条可用（其余撞到 1,024 token 上限被丢弃）；六个条件 × 三个 seed 的 18 份数据各 4,000 对，都已组装好。
+- Code and tests for the whole pipeline (83 tests, passing locally and on the server).
+- Server environment: Vast.ai RTX 4090 48 GB. torch 2.14.0, transformers 5.22.2, vLLM 0.34.0,
+  trl 1.18.1, peft 0.21.3.
+- Rehearsal: on the server GPU, with a tiny model, the gates, training of all six conditions,
+  all six evaluations, the report and the merge/export all ran end to end
+  (`PNO_DEVICE=cuda bash scripts/rehearsal.sh`).
+- Gates 0-4 have results (section 5).
+- Training data: the base model generated 17,969 target responses, of which 16,288 are usable
+  (the rest hit the 1,024-token limit and were dropped). All 18 datasets (six conditions x three
+  seeds), 4,000 pairs each, are assembled.
+- Seed 0: all six conditions trained and fully evaluated, plus the base model and the three 8B
+  reference models.
+- Follow-up runs on seed 0, all finished by Nov 19, 09:36 PST. They ran in the server tmux
+  sessions `seed0`, `nocount`, `sft`, `mix`, `extras`, `big`, `after`, `sft2` (logs have the
+  same names; the queue was reordered once, Nov 18 21:12 PST). Each 2B model takes about 25
+  minutes to evaluate, of which SEP's 12,000 prompts take 15.
+  1. `seed0` (`run_seed0b.sh`): main SecFid results for C1-C6, gate 2 (SecFid for
+     Meta-SecAlign-8B and the undefended Llama-3.1-8B-Instruct), the other evaluations (SEP,
+     transfer, IFEval, held-out conflicts) for the six runs and the base, and the report.
+  2. `nocount` (diagnostic 1, `run_keep_variant.sh nocount '^count_' C3_process_ordinary
+     C4_process_fidelity`, in `/workspace/pno-nocount`): "count sentences" and "count lines"
+     removed from the training transform pool, C3 and C4 retrained, SecFid only. The ordinary
+     and ignore-style data do not depend on the transform pool and are byte-identical to the
+     main experiment (C1's data fingerprint matches), so the generated responses were reused.
+  3. `sft` (diagnostic 2, `run_cfg_variant.sh sft ...`, in `/workspace/pno-sft`; new code only
+     in that copy): anchored loss (DPO + SFT; `loss_type: [sigmoid, sft]`, weights 1:1), same
+     data. C4 retrained (SecFid, held-out conflicts) and C2 (also SEP).
+  4. `mix` (in `/workspace/pno-mix`): candidate conditions C7 and C8 (section 8, item 1), one
+     run each, evaluated on SecFid, SEP and held-out conflicts.
+  5. `extras`: gate-3 format check (instruction and data in one user message); gate-4 fallback
+     (C1 with twice the security pairs, in the copy `/workspace/pno-sec2x`, main data
+     untouched).
+  6. `big` (in `/workspace/pno-secbig`, about 3 hours): large-training baseline, C1 with 7,500
+     security pairs for 3 epochs (about 11x the current amount, the limit of the host pool).
+  7. `after`: the remaining evaluations of the three 8B reference models, gap filling, report,
+     gate summary.
+  8. `sft2`: C1 (in `/workspace/pno-sft`) and C7 (in `/workspace/pno-mixsft`) trained once each
+     with the anchored loss, evaluated on SecFid, SEP and held-out conflicts. It could be
+     cancelled by `touch /workspace/process-not-obey/.skip_sft2` on the server before it
+     started.
+- Verbatim copies of these scripts are in `scripts/server/`.
+- After the queue finished (Nov 19, 09:36 PST), results were copied to the local
+  `server_results/` (5.4 GB, not in git); all 668 files passed a per-file sha256 check. The
+  instance was then stopped with the server's own `vastai stop instance` (10:14 PST; the
+  console shows Inactive, disk fee only, $0.026/hour). The data disk is kept; after a restart
+  the IP and port may change.
+- Hugging Face login done on the evening of Nov 18; both gated models are accessible.
 
-**11/18 晚到 11/19 上午的队列（已全部跑完；队列在 11/18 21:12 PST 重排过一次；服务器 tmux 会话依次是 `seed0`、`nocount`、`sft`、`mix`、`extras`、`big`、`after`、`sft2`，日志同名；全部跑完预计在 11/19 12:00–12:30 PST。比原先估的 03:30 晚，因为评测比估计慢：每个 2B 模型约 25 分钟，其中 SEP 的 12,000 条占 15 分钟）**
+**Results.** All numbers are in [`docs/RESULTS.md`](docs/RESULTS.md). Seed-0 headline:
 
-1. `seed0`（`run_seed0b.sh`）：先出主指标。C3、C5 的 SecFid（已出，见下），再是 C2、C4、C6；然后 gate 2（Meta-SecAlign-8B 和未防御的 Llama-3.1-8B-Instruct 的 SecFid）；然后六个训练结果和基座的其余评测（SEP、transfer、IFEval、held-out 冲突题）和报告。
-2. `nocount`（11/18 晚加的诊断，`run_keep_variant.sh nocount '^count_' C3_process_ordinary C4_process_fidelity`）：把"数句子""数行"两种变换从训练用的变换池里去掉（既不当可信指令，也不当注入指令），重新组装数据，重训 C3 和 C4，只测 SecFid。在 `/workspace/pno-nocount` 里跑。普通问答和忽略式那两部分数据不依赖变换池，和主实验逐字节相同（C1 的数据指纹一致），所以直接复用主实验生成的回答。要回答的问题：干净输入上的计数是不是被这两种变换训坏的。**已完成（11/19 00:24 PST），结果见第 7 节：只是一部分原因。**
-3. `sft`（11/18 晚加的第二个诊断，`run_cfg_variant.sh sft ...`）：训练损失改成 DPO 加上"被偏好回答的逐 token 负对数似然"（`loss_type: [sigmoid, sft]`，权重 1:1），训练数据和主实验完全相同。重训 C4（测 SecFid 和 held-out 冲突题）和 C2（再加 SEP）。在 `/workspace/pno-sft` 里跑，新代码只放在这个副本里，主副本没动。要回答的问题：含 fidelity 数据的条件把自己练过的变换练坏（第 7 节），是不是因为 DPO 只压低被拒绝回答、不约束被偏好回答。约 55 分钟。**已完成（11/19 01:13 PST）：是，训练过的任务上基本修好。但 C2 换损失后在 SecFid 上开始丢内容（ignored 5.0% → 21.1%），见第 7 节。**
-4. `mix`（11/18 深夜加的两个候选条件，见第 8 节第 1 条）：C7 = 忽略式 1,000 对 + process-style 1,000 对 + 普通问答 2,000 对；C8 = 同样的混合安全样本 + fidelity 2,000 对。各训练一次，测 SecFid、SEP 和 held-out 冲突题。在 `/workspace/pno-mix` 里跑。要回答的问题：把两种安全样本混起来，能不能同时保住 SEP 上的安全和 SecFid 上的不丢内容。**已完成（11/19 02:30 PST）：在原损失下没有超过 C2，见第 7 节。**
-5. `extras`：gate 3 的格式对照（指令和数据放在同一条 user 消息里）；gate 4 的退路（C1 的安全样本翻倍，在 `/workspace/pno-sec2x` 这个副本里跑，不动主实验的数据）。
-6. `big`：大训练量的基线。C1 用 7,500 对安全样本、3 个 epoch（约为现在的 11 倍，是主机池允许的上限），在 `/workspace/pno-secbig` 里跑，约 3 小时。用来回答"忽略式训练量够了，C1 会不会也丢内容"。
-7. `after`：三个 8B 参考模型的其余评测（和六个条件的比较无关）、补漏、报告、gate 汇总。
-8. `sft2`（11/19 凌晨加的，排在最后）：用 DPO 加 SFT 的损失各训练一次 C1 和 C7，测 SecFid、SEP 和 held-out 冲突题。C1 在 `/workspace/pno-sft` 里跑，C7 在 `/workspace/pno-mixsft` 里跑。要回答的问题：诊断二显示这个损失下 C2 开始丢内容，那么标准做法 C1 是否也丢内容，混入 process-style 样本的 C7 能否既安全又不丢内容。**已完成（11/19 09:36 PST）：C1 丢内容，C7 把它压回了基座水平，SEP 上有代价，见第 7 节。**开始前在服务器上 `touch /workspace/process-not-obey/.skip_sft2` 可以取消。
-
-全部结束后（11/19 09:36 PST），结果已拉回本机的 `server_results/`（5.4 GB，不进 git），668 个文件逐个校验 sha256 通过，然后用服务器自带的 `vastai stop instance` 停了机（10:14 PST；控制台显示 Inactive，只收磁盘费，每小时 $0.026）。数据盘保留；重新开机后 IP 和端口可能变。
-
-这些脚本的原样副本在 `scripts/server/`。
-
-**seed 0 的结论（11/18 深夜，六个条件和基座的全部评测已出齐；详见第 7 节）**
-
-| 模型 | SecFid：执行注入 | 丢内容 | 安全处理 | 安全处理（去掉计数题） | 干净输入正确率 | SEP 攻击成功 | transfer 攻击成功 | IFEval |
+| model | SecFid: executed | ignored | safe processing | safe processing (no counting) | clean-input accuracy | SEP ASR | transfer ASR | IFEval |
 |---|---|---|---|---|---|---|---|---|
-| 基座 | 11.2 | 17.1 | 63.5 | 65.2 | 93.8 | 92.0 | 39.6 | 72.9 |
+| base | 11.2 | 17.1 | 63.5 | 65.2 | 93.8 | 92.0 | 39.6 | 72.9 |
 | C1 ignore + ordinary | 5.1 | 16.6 | 73.7 | 76.2 | 89.5 | 28.1 | 11.2 | 69.0 |
 | C2 ignore + fidelity | 4.5 | 5.0 | 88.7 | 88.0 | 81.7 | 19.9 | 6.3 | 68.5 |
 | C3 process + ordinary | 6.5 | 5.5 | 87.3 | 87.0 | 82.4 | 83.0 | 36.9 | 71.1 |
@@ -73,488 +112,342 @@
 | C5 target control | 4.7 | 27.8 | 62.5 | 63.9 | 94.3 | 72.6 | 33.5 | 66.8 |
 | C6 boundary control | 7.4 | 6.8 | 85.1 | 84.8 | 83.7 | 85.8 | 38.8 | 72.1 |
 
-1. **预先定的主假设在 seed 0 上不成立。** 三条里只过了一条：SecFid 的 safe processing，C3 比 C5 高 24.8 个点（区间 +22.0 到 +27.6）。另外两条没过：SEP 上 C3 的安全性比 C5 低 10.3 个点（区间 −12.2 到 −8.6），transfer 攻击上低 3.5 个点（−5.5 到 −1.4），预设的界是 2 个点。`outputs/report/hypothesis.json` 给出的结论是 supported: false。
-2. **process-style 目标确实不丢内容。** 同样的输入、同样的被拒绝回答，目标是"忽略"的 C5 把 SecFid 的 ignored 从基座的 17.1% 推到 27.8%，目标是"当内容处理"的 C3 是 5.5%。
-3. **只用变换类任务做安全样本，安全性迁移不到普通任务。** 基座在 SEP 上几乎全线失守（92.0%）。安全样本是普通问答的 C1、C2 降到 28.1% 和 19.9%；安全样本是变换类任务、另一半是普通问答的 C3、C5、C6 只降到 83.0%、72.6%、85.8%。C4 是例外：它的安全样本和 C3 相同，另一半换成 fidelity 数据后是 46.6%，原因还没有查（11/19 晚核对时补）。
-4. **综合最好的是 C2**，也就是 [6] 已有的修法（忽略式安全样本 + fidelity 数据）：SecFid 上和 C3 打平，SEP 和 transfer 上比 C1 还安全。process-style 没有显示出超过它的好处。
-5. **C4（完整配方）在 SecFid 的非计数题上各项最好**（safe processing 94.1，executed 1.7），SEP 上居中（46.6%），代价是计数题和 IFEval（66.6，基座 72.9）。
-6. **标准配方 C1 在原损失下不丢内容，训练量加到 11 倍也没有超过基座**（ignored：2,000 对 16.6%，4,000 对 13.1%，7,500 对 × 3 轮 18.1%，基座 17.1%）；SEP 上则越训越安全（28.1% → 21.9% → 15.0%）。丢内容在 C5 上出现，在换了损失的 C2 上也出现（第 9 条）。
-7. **训练的副作用**：C2、C3、C4、C6 把计数题练坏了（干净输入上的计数正确率 87.9% → 40.4%、38.4%、18.2%、44.6%）；C2 在自己练过的变换上丢格式；所有条件的 IFEval 都比基座低 1 到 6 个点。诊断一（去掉两种计数变换重训，11/19 凌晨）说明计数变换只是一部分原因：正确率回到 58.3%（C3）和 56.0%（C4），C4 "数完停不下来"的毛病消失，但仍有约三分之一的题多数一个。
-8. **测量本身**：gate 0 通过；gate 1 保留 13 个变换；gate 2 一半对上（公开的 Meta-SecAlign-8B 的丢内容率我们测出 27.5%，发表值 26.1%；未防御的 Llama 对不上，很可能是排版不同）；gate 3 基座在 SecFid 上的 executed 只有 11.2%，没到预设的 20%。
+**Hypothesis verdict (seed 0): not supported.** Part 1 holds (SecFid safe processing, C3 − C5
++24.8, interval [+22.0, +27.6]); part 2 fails (SEP, −10.3, interval [−12.2, −8.6]); part 3
+fails (transfer, −3.5, interval [−5.5, −1.4]). `outputs/report/hypothesis.json` gives
+supported: false. The follow-up runs (diagnostics, C7/C8, anchored loss) are summarized in
+`docs/RESULTS.md`, Key findings.
 
-9. **换一个损失，结论会变（诊断二，11/19 凌晨）。** 训练损失在 DPO 之外加上"直接学被偏好的回答"之后，C2 更安全了（SEP 14.3%），练坏的格式和计数大部分恢复，但 SecFid 上开始丢内容（ignored 21.1%，高于基座）。也就是说，主实验里 C2 "不丢内容"有相当一部分是 DPO 把"丢掉那句话的回答"压得太狠造成的偏置；在模型真正学会目标回答的情形下，proposal 的前提（忽略式训练会丢内容，fidelity 数据修不回来）出现了。这个情形下 process-style 管不管用，还没有测。
+**Not done yet:** the other two seeds; the training run that separates the SEP cost of C7 from
+the halving of ignore-style pairs.
 
-以上全部只有一个训练 seed，区间只反映题目抽样。10. **混用两种安全样本（C7、C8，原损失）没有超过 C2。** 把一半忽略式样本换成 process-style 后，SEP 上各多被攻破约 9 个点；有 fidelity 数据时 SecFid 上只多 1.4 个点。
+**Timeline**
 
-11. **换了损失之后，C7 的丢内容回到了基座水平，但原因还没有分开（11/19 上午；11/19 晚核对后改写，原标题是“process-style 起作用了”）。** 在 DPO 加 SFT 的损失下，标准配方 C1 丢内容（ignored 23.2%，比基座高 6.1 个点），[6] 的修法 C2 修不回来（21.1%），混入 process-style 样本的 C7 回到基座水平（16.4%），safe processing 比 C1 高 8.3 个点。SEP 上多被攻破 7.1 个点。C7 相对 C1 同时改了两处（忽略式样本减半、加入 process-style 样本），所以丢内容的下降和 SEP 上的代价各来自哪一处，都还没有分开测；原先只对代价说了这一点。按绝对水平，新损失下的 C7（ignored 16.4 / safe processing 74.9 / SEP 29.1）和原损失下的 C1（16.6 / 73.7 / 28.1）基本一样，这三项上最好的仍是原损失下的 C2（5.0 / 88.7 / 19.9）。
-
-11/18 晚到 11/19 上午排的队列已全部跑完。还没做的：另外两个 seed；把 SEP 的代价和样本减半分开的那一次训练。
-
-Hugging Face 已于 11/18 晚登录，两个受限模型可以访问。
-
-**时间**
-
-| 日期 | Proposal 的安排 | 现状 |
+| date | proposal schedule | status |
 |---|---|---|
-| 11/15 | 四项检查完成 | 服务器 11/18 才到位。gate 0、1、3、4 当晚完成（3、4 未达标），gate 2 当晚在跑 |
-| 11/20（周五） | 六个条件 × 1 个 seed 的结果，meeting | seed 0 的六次训练 11/18 晚完成，主比较的 SecFid 已出，其余评测当晚在跑 |
-| 11/23（周一） | Report V1 | 按计划 |
-| 12/7（周一） | 其余 seed、错误分析、Report V2 | 按计划 |
-| 12/12（周六） | 终稿、代码、checkpoint | 按计划 |
+| Nov 15 | four gate checks done | the server only arrived Nov 18. Gates 0, 1, 3, 4 done that evening (3 and 4 not met); gate 2 ran that night |
+| Nov 20 (Fri) | six conditions x 1 seed, meeting | seed-0 training and evaluation done Nov 18-19 |
+| Nov 23 (Mon) | Report V1 | on schedule |
+| Dec 7 (Mon) | remaining seeds, error analysis, Report V2 | on schedule |
+| Dec 12 (Sat) | final paper, code, checkpoints | on schedule |
 
-## 2. 要回答的问题和判定规则
+## 2. Question and decision rule
 
-主比较是 C3（process-style）对 C5（target control：同样的 prompt，但偏好"把注入句删掉再处理"）。
+The primary comparison is C3 (process-style) against C5 (target control: the same prompts, but
+the preferred response deletes the injected sentence and then processes the rest).
 
-主假设成立，需要同时满足：
+The main hypothesis holds only if all of the following hold:
 
-1. SecFid 的 safe-processing rate（被处理且没被执行），C3 − C5 的 95% 置信区间下界大于 0；
-2. SEP 上的安全性，C3 比 C5 最多低 2 个点；
-3. transfer attack 上的安全性，C3 比 C5 最多低 2 个点。
+1. SecFid safe-processing rate (processed and not executed): the lower bound of the 95%
+   confidence interval of C3 − C5 is above 0;
+2. security on SEP: C3 is at most 2 points worse than C5;
+3. security on the transfer attack: C3 is at most 2 points worse than C5.
 
-`bash scripts/50_report.sh` 会把这三条直接算出来写进 `outputs/report/hypothesis.json`。
+`bash scripts/50_report.sh` computes all three and writes them to
+`outputs/report/hypothesis.json`.
 
-**seed 0 的结果（11/18）**：第 1 条成立（+24.8，区间 [+22.0, +27.6]）；第 2 条不成立（−10.3，区间 [−12.2, −8.6]）；第 3 条不成立（−3.5，区间 [−5.5, −1.4]）。主假设在 seed 0 上不成立。
-2×2 的交互项、boundary control 的比较都算，但按 proposal 属于探索性结果。
+**Seed-0 result (Nov 18)**: part 1 holds (+24.8, interval [+22.0, +27.6]); part 2 fails
+(−10.3, interval [−12.2, −8.6]); part 3 fails (−3.5, interval [−5.5, −1.4]). The main
+hypothesis does not hold on seed 0.
+The 2x2 interaction and the boundary-control comparison are computed too, but per the proposal
+they are exploratory.
 
-## 3. 时间表
+## 3. Schedule
 
-实测耗时来自 11/18 的服务器（RTX 4090 48 GB）；标"估计"的还没有实测。
+Measured times are from the Nov 18 server (RTX 4090 48 GB); items marked "estimated" have not
+been measured.
 
-| 阶段 | 内容 | 耗时 | 状态 |
+| phase | content | time | status |
 |---|---|---|---|
-| M0 | 代码、测试 | 不占 GPU | 完成 |
-| M1 | 装环境，彩排，gate 0、1 | 环境约 45 分钟（主要是下载和编译）；gate 0 约 10 分钟（首次要编译内核）；gate 1 约 10 分钟（2.2 万条） | 完成（11/18） |
-| M2 | 生成目标回答，组装数据 | 约 20 分钟，其中生成 13 分钟（1.8 万条） | 完成（11/18） |
-| M3 | gate 3、4；六个条件 × seed 0 的训练和评测，基座 + 参考模型 | 训练实测：每个条件 19–26 分钟，C4 只要 4 分钟（它的样本都短）。评测实测：每个 2B 模型约 25 分钟（SEP 15 分钟）；8B 参考模型估计各 1 小时。整套约 7 小时 | 训练完成，评测 11/18 晚在跑 → 11/20 meeting、Report V1 |
-| M4 | seed 1、2（12 次训练 + 评测） | 估计 8–9 小时（训练约 3.5 小时，评测约 5 小时） | 11/30 前 |
-| M5 | 错误分析、Report V2 | 不占 GPU | 12/7 |
-| M6 | 终稿、整理代码、上传 checkpoint | 不占 GPU | 12/12 |
+| M0 | code, tests | no GPU | done |
+| M1 | environment, rehearsal, gates 0 and 1 | environment about 45 minutes (mostly downloads and compilation); gate 0 about 10 minutes (first run compiles kernels); gate 1 about 10 minutes (22,000 prompts) | done (Nov 18) |
+| M2 | generate target responses, assemble data | about 20 minutes, of which generation 13 minutes (18,000 prompts) | done (Nov 18) |
+| M3 | gates 3 and 4; six conditions x seed 0 training and evaluation, base + reference models | training measured: 19-26 minutes per condition, C4 only 4 minutes (its examples are short). Evaluation measured: about 25 minutes per 2B model (SEP 15 minutes); 8B reference models estimated at 1 hour each. About 7 hours in all | done (Nov 18-19) → Nov 20 meeting, Report V1 |
+| M4 | seeds 1 and 2 (12 training runs + evaluation) | estimated 8-9 hours (training about 3.5 hours, evaluation about 5 hours) | by Nov 30 |
+| M5 | error analysis, Report V2 | no GPU | Dec 7 |
+| M6 | final paper, code cleanup, upload checkpoints | no GPU | Dec 12 |
 
-## 4. 服务器上的执行步骤
+## 4. Server commands
 
-每一步都能断点续跑，已经完成的部分会跳过。随时用 `python -m pno.pipeline status` 看进度。长任务放在 tmux 里跑。
+Every step can resume; finished parts are skipped. `python -m pno.pipeline status` shows
+progress at any time. Run long jobs in tmux.
 
 ```bash
-bash scripts/00_setup_server.sh          # 建 venv，装 vLLM/TRL/PEFT，拉第三方仓库，跑单元测试      （已完成）
-hf auth login                            # 本人执行；账号已有 Llama-3.1-8B-Instruct 和 embeddinggemma-300m 的权限  （未做）
-PNO_DEVICE=cuda bash scripts/rehearsal.sh   # 彩排：微型模型在 GPU 上把下面所有脚本跑一遍       （已通过）
-GATES=0 bash scripts/10_gates.sh         # 后端自检                                                  （已通过）
-GATES=1 bash scripts/10_gates.sh         # gate 1 → outputs/competence/qwen3.5-2b/keep.json           （已完成）
-bash scripts/20_build_data.sh            # 生成目标回答，组装六个条件 × 三个 seed                    （已完成）
+bash scripts/00_setup_server.sh          # venv, vLLM/TRL/PEFT, third-party repos, unit tests      (done)
+hf auth login                            # run by the account owner; needs access to Llama-3.1-8B-Instruct and embeddinggemma-300m  (done Nov 18)
+PNO_DEVICE=cuda bash scripts/rehearsal.sh   # rehearsal: tiny model runs every script below on the GPU  (passed)
+GATES=0 bash scripts/10_gates.sh         # backend self-check                                        (passed)
+GATES=1 bash scripts/10_gates.sh         # gate 1 → outputs/competence/qwen3.5-2b/keep.json          (done)
+bash scripts/20_build_data.sh            # generate target responses, assemble six conditions x three seeds  (done)
 ```
 
-没有 HF token 时的跑法（11/18 晚用的就是这个，脚本在服务器的 `/workspace/run_seed0.sh`）：
+Running without an HF token (used on the evening of Nov 18; the script is
+`/workspace/run_seed0.sh` on the server):
 
 ```bash
-python -m pno.pipeline train --seeds 0                                     # 六个条件
-python -m pno.tools.check_backend --adapter runs/C1_ignore_ordinary-seed0   # 运行时 LoRA 还是合并 checkpoint
-python -m pno.pipeline eval --seeds 0 --models base_qwen35_2b meta_secalign_8b secpo_llama31_8b --no_score   # 只生成
+python -m pno.pipeline train --seeds 0                                     # six conditions
+python -m pno.tools.check_backend --adapter runs/C1_ignore_ordinary-seed0   # runtime LoRA or merged checkpoint
+python -m pno.pipeline eval --seeds 0 --models base_qwen35_2b meta_secalign_8b secpo_llama31_8b --no_score   # generate only
 python -m pno.pipeline eval --seeds 0 --models base_qwen35_2b meta_secalign_8b secpo_llama31_8b \
-    --benchmarks sep transfer ifeval conflict                               # 不需要受限模型的打分
-python -m pno.eval.secfid partial outputs/eval/*                            # SecFid 里不需要 embedding 模型的部分
+    --benchmarks sep transfer ifeval conflict                               # scoring that needs no gated model
+python -m pno.eval.secfid partial outputs/eval/*                            # the part of SecFid that needs no embedding model
 bash scripts/50_report.sh
 ```
 
-登录 HF 之后补齐（已有的输出不会重新生成）：
+After HF login, fill in the rest (existing outputs are not regenerated):
 
 ```bash
-GATES="2 3" bash scripts/10_gates.sh     # gate 2：SecFid 打分能否复现发表的数；gate 3：基座模型
-python -m pno.eval.secfid crosscheck --outputs outputs/eval/meta_secalign_8b/secfid.jsonl   # 我们的打分 vs 官方脚本
-bash scripts/40_eval.sh --seeds 0        # 补上 SecFid 的完整打分和 Llama-3.1-8B-Instruct
-bash scripts/50_report.sh                # outputs/report/report.md → Report V1 的表
+GATES="2 3" bash scripts/10_gates.sh     # gate 2: does SecFid scoring reproduce the published numbers; gate 3: base model
+python -m pno.eval.secfid crosscheck --outputs outputs/eval/meta_secalign_8b/secfid.jsonl   # our scoring vs the official script
+bash scripts/40_eval.sh --seeds 0        # full SecFid scoring and Llama-3.1-8B-Instruct
+bash scripts/50_report.sh                # outputs/report/report.md → tables for Report V1
 ```
 
-其余 seed：
+Remaining seeds:
 
 ```bash
 bash scripts/30_train.sh --seeds 1 2
 bash scripts/40_eval.sh  --seeds 1 2 --models
-bash scripts/50_report.sh                # 三个 seed 的置信区间 → Report V2
+bash scripts/50_report.sh                # confidence intervals over three seeds → Report V2
 ```
 
-`crosscheck` 那一步会执行 SecFid 仓库里的官方 `evaluate.py`（第三方代码，我读过，只有字符串处理和 sentence-transformers 调用）。这一步我没有执行，留给你们确认后跑。
+The `crosscheck` step runs the official `evaluate.py` from the SecFid repo (third-party code; it
+was read and contains only string processing and sentence-transformers calls). This step has
+not been run; it is left for the team to confirm and run.
 
-## 5. 四个 gate：通过标准、结果与退路
+## 5. The four gates: criteria, results and fallbacks
 
-| gate | 看什么 | 通过标准 | 结果（11/18） | 不通过怎么办 |
+| gate | what is checked | pass criterion | result (Nov 18-19) | if it fails |
 |---|---|---|---|---|
-| 0 | vLLM 与 transformers 在基座模型上的贪心输出是否一致（24 条） | 能跑，且大部分一致 | **通过。** 18 条变换类提示完全一致；6 条自由问答里 4 条中途措辞分叉（bf16 数值差异） | `PNO_BACKEND=hf` |
-| 1 | 113 个变换（99 + 14）里，基座模型在无冲突输入上精确匹配率 ≥ 80% 且对内容敏感的有多少 | 保留的变换至少覆盖 8 种不同行为 | **通过，但余量小。** 保留 13 个（目录 6 个 + 句/行级 7 个），按采样器的口径是 10 种行为。详见第 7 节 | 打开 `data.trusted_suffix`（保留数 13 → 21）；降阈值到 0.7；再加句子/行级操作 |
-| 2 | Meta-SecAlign-8B 在 SecFid 上：发表值 security 99.3、fidelity 73.9 | security 差 ≤ 1.5 点，fidelity 差 ≤ 3 点 | **一半对上。** Meta-SecAlign-8B：security 96.9（差 −2.4，超出 1.5），fidelity 72.5（差 −1.4），ignored 27.5（发表 26.1）。未防御的 Llama-3.1-8B-Instruct 对不上：security 85.2（发表 50.9）；换成单条消息格式后是 67.0，ignored 对上了，executed 仍偏低。见第 7 节 | 先查 prompt 模板（有没有多出 system 段）、最大生成长度、embedding 模型版本 |
-| 3 | 基座 Qwen3.5-2B 在 SecFid 上的 executed 率，以及干净输入上的正确率 | executed ≥ 20%；干净输入正确率 ≥ 50% | **一半没过。** executed 只有 11.2%（基座本来就不太上当）；干净输入正确率 93.8% | 换 Llama-3.1-8B（[6] 在它上面有完整数据） |
-| 4 | C1（ignore-style）训练后，SecFid 的 ignored 率比基座高多少 | ≥ 5 个点 | **没过。** 17.1% → 16.6%（−0.5 点）；executed 11.2% → 5.1%。安全样本加到 4,000 对是 13.1%，加到 7,500 对 × 3 轮是 18.1%，都没有比基座高出 5 个点。同样的忽略式目标放到变换类输入上（C5）则出现了：27.8%；换成 DPO 加 SFT 的损失后 C2 也出现了：21.1%（第 7 节） | 先把 security pairs 翻倍（已排队）；还不行换 Llama-3.1-8B（proposal 原话） |
-
-通过标准里的 8 种行为、1.5/3 点、20%/50% 是我在看到数据之前定的操作性阈值，proposal 没写具体数，组里可以改。`python -m pno.pipeline gates` 会把四项的数字和结论打印出来。
-
-gate 2 有一个已知的不确定来源：SecFid 论文没有规定 prompt 模板和最大生成长度，我们用的是 user/input 两段式、贪心解码、最多 2,048 个新 token。
-
-## 6. 落地时做的设计决定
-
-Proposal 没写到这么细，下面是实现时定下来的。前 5 条会影响结论的解释，建议组里过一遍。
-
-1. **输入里加了普通文本（carrier）。** [8] 的两条消息里只有两条指令，没有别的内容。我们的 target control 要求"把注入句删掉后再处理"，所以输入里必须还有别的东西。现在是 1–2 句（或 2–4 行）取自 Alpaca 回答的陈述句，再加一条注入指令。
-2. **所有安全数据用同一套注入位置：45% 在前、45% 在后、10% 伪完成式**（先放一段假回答，再用随机的假分隔符引出注入）。这是 Meta-SecAlign 代码里的实际配方。ignore-style 和 process-style 都这样放，免得两者除了"任务类型"和"目标"之外还差一个攻击格式。
-3. **有效 batch 64，4,000 对只有 63 次参数更新。** 这是 [8] 的设置（它 9,544 对是 150 次更新）。更新次数偏少，gate 4 就是在检查这个规模够不够；不够的话先翻倍数据。
-4. **LoRA 只挂在 q/k/v/o 和 MLP 上（[8] 的设置）。** Qwen3.5 每四层才有一层是普通注意力，中间三层是 Gated DeltaNet，没有 q/k/v/o，只有 MLP 被适配。要不要把 DeltaNet 的投影也加进去，是一个可以讨论的偏离。
-5. **Transfer attack 的构造。** SecPO 只在训练集里放了优化过的注入串，每条都是围绕某个 Alpaca 指令写的，没有成功与否的标注，直接重放需要 LLM judge。我们的做法：取"目标指令原样出现一次"的注入串，把目标换成 SEP 的 probe，接在 SEP 数据后面，用 witness 是否出现来判成功。其中一部分注入串其实就是 SecPO 的 87 个种子模板（没被改写过），报告里分开报。局限要写进报告：这些串是针对 Llama-3.1-8B 优化的；改写过的串可能提到原来的宿主任务，换了目标后会变弱。
-6. **SEP 用 2,000 条的固定子集 × 6 种攻击，只看 witness。** 全量 9,160 条 × 6 × 22 个模型太贵。Meta-SecAlign 现在的代码和 SecPO 在 witness 之外还加了 LLM judge，所以我们的 ASR 是它们口径的上界。终稿前如果时间够，可以把 `eval.sep.n_items` 改成 null 跑全量。
-7. **SecFid 打分是按官方规则重写的**，不是直接调用官方脚本（好处是可以批量算 embedding、能算 safe-processing）。用 `crosscheck` 核对一次。
-   - 相关的一条：**评测时怎么加载训练结果。** 默认照 Meta-SecAlign 的做法，vLLM 加载基座再在运行时挂 LoRA（`eval.adapter_mode: lora`），不产生额外的 checkpoint。服务器上验证过了（40 条提示）：vLLM 运行时 LoRA 与 transformers + adapter 的输出 80% 完全一致，和两个引擎在基座模型上的一致率相同；adapter 确实改变了输出（与基座只有 27.5% 相同）。配置默认 `adapter_mode: auto`，现在选的是 lora。另一条路（评测 float32 合并后的 checkpoint）在 vLLM 0.34.0 里引擎启动失败，原因没有查，目前用不到。
-8. **自生成的目标回答按两个官方仓库的做法用温度 0.8 采样**（固定 seed），最长 1,024 token（它们是 8,192），撞到上限的回答直接丢弃。
-9. **fidelity 数据里的"像指令的内容句"**取自 Alpaca 的单句指令和问句（SecFid 的 probe 是问句）。任务仍然是目录里的变换，不碰翻译、编辑、抽取、计数这四类 SecFid 任务。
-10. **按"行为"而不是按"指令"均匀采样变换。** 目录里有六七条指令对普通英文句子的效果都是"原样返回"（copy、NFC/NFD/NFKC、strip 等），不做平衡的话"原样复制"会占掉很大一部分数据。
-11. **每个 seed 内各条件共享组件。** C1/C3/C5/C6 的 ordinary 部分完全相同；C3/C5/C6 是同一批冲突的三种写法；C2/C4 的 fidelity 部分相同。
-12. **多加了两个评测**：SecFid 干净输入上的任务正确率（gate 3 要用，也用来解释 OTHER 率）；held-out 冲突题（检查模型有没有学会训练任务本身）。
-13. **可信指令后面要不要加一句"只输出结果"**（`data.trusted_suffix`，默认不加）。目录原文不规定输出格式，2B 模型经常先解释再给答案，精确匹配会判错，于是"会做但格式不对"的变换也被 gate 1 筛掉。加这句话只改可信一侧的指令，注入指令保持目录原文。服务器上的对照结果见第 7 节：不加保留 13 个变换，加了保留 21 个；默认仍不加。
-
-### 代码审查中修掉的问题（11/18）
-
-写完后做了一轮审查，改了十处，其中会影响实验结论的四处：
-
-- **合并精度。** 原来在 bfloat16 下把 LoRA 合并进基座。bf16 在 0.02 附近的最小间隔约 1e-4，和 LoRA 更新量同一量级，合并后大部分更新会被舍入掉，评测出来的模型会更像基座。现在改为 float32 合并和评测，合并后自动对比"基座 + adapter"的 logits。
-- **精确匹配过宽。** 原来把参考答案两端的引号也剥掉了，模型把输入原样返回也会被判成"JSON 字符串 / CSV 字段"做对了。现在只对模型输出宽容，参考答案原样比较。
-- **句子级操作的参考答案。** 含缩写的句子（"Dr. Lee"、"U.S."）会被切成两句；伪完成式的输入里，分隔符行和带编号的假回答会被当成句子。现在 carrier 只取"恰好一句"的文本，句子级操作不用伪完成式位置。
-- **报告静默取交集。** 只要有一个模型是用 `--limit` 跑的，所有模型的指标都会只在那一小部分题上算。现在报告里会列出题数不齐的模型。
-
-## 7. 服务器上的实测结果（11/18）
-
-原始输出都在服务器的 `outputs/` 下（`competence/`、`check_backend/`）。
-
-### gate 1：基座模型会做什么
-
-每个变换 100 条无冲突提示（可信指令在 user 段，文本在 input 段），输出与 Python 算出的参考答案精确匹配才算对。
-
-- 113 个变换里 **73 个一条都没做对**，15 个低于 20%，只有 13 个 ≥ 80%。全部变换的平均正确率是 16.5%。
-- 保留的 13 个：原样复制（T01）、去首尾空白（T11）、压缩空白（T12）、CRLF→LF（T14）、小写（T04）、CSV 字段（T91）；句/行级的给句子编号、一句一行、数句子、每句首词、数行、合并行、每行加引用符。前四个对普通英文句子的效果都是"原样返回"，采样时算同一种行为，所以是 10 种行为。
-- 差一点的：数字换成 #（T23，76%）、大写（T03，66%）、项目符号（67%）。大写错在个别词上（"Y-Axis"、"VILLIERS"）。
-- 做错的方式（按第一次运行的 2,825 条统计）：完全正确 16.5%；答案对但外面包了解释 8.2%；把输入原样返回 15.1%；长篇解释 32.7%；其他错误 27.5%。也就是说，2B 模型失败的主要原因是"先解释一通"或"什么都不做"，目录里按码点、哈希、编码定义的操作它确实不会。
-- 可信指令后加一句 "Output only the result." 的对照版本：保留 21 个，平均正确率 26.7%。新增的 8 个里，4 个是"原样返回"类（NFC、NFKC、去行尾空白、行去重），1 个和已有的重复（T81 数行），真正新增的是给行编号（两种格式）和项目符号。按采样器的口径是 10 → 14 种行为，其中一种是"多行文本原样返回"。**默认仍用目录原文（13 个）**；要不要换成带后缀的版本由组里定，换的话需要重新组装数据（约 15 分钟）并重新训练 C2–C6。
-
-三点方法上的说明：
-
-1. 前两次运行用的是每个变换 25 条。两次的提示完全相同，但保留清单不一样（T23 一次 80%、一次 76%）：vLLM 的贪心解码在不同运行之间不是逐位一致的。所以改成 100 条，正式清单以这次为准。
-2. "每句首词"这个操作（我们自己加的）原来的参考答案带着词后的标点（"Therefore,"），而模型给的是 "Therefore"，被判错。这是参考答案的定义问题，已改成和"每句末词"一致（不带标点），改完后重跑了 gate 1。
-3. 未训练的基座模型在冲突提示上的表现（保留的 13 个变换，1,300 条；这里的注入指令取自全部 113 条）：处理了注入句 37.0%，精确执行 0.8%，忽略 9.3%，其他 52.8%。"其他"里有很多是**试图照注入指令去做但做不对，或者做在了输入文本上**（例如让它原样复制，注入句说"把各行倒序"，它就把句子倒过来输出）。严格按"对 user 消息执行注入变换"来判的 executed 率因此偏低，读 held-out 冲突题的结果时要看"其他"这一栏，错误分析时要人工读一批。
-
-### gate 3 和 gate 4：基座不太上当，基线训练也没有造成"丢内容"
-
-SecFid 全部 1,168 题，seed 0，单位是百分比。后两行是 [6] 发表的数字，放在一起对照（它们的 prompt 格式和我们不一定相同，gate 2 会在我们的格式下重测）。
-
-| 模型 | executed | processed | ignored | other | security | fidelity | safe processing |
-|---|---|---|---|---|---|---|---|
-| 基座 Qwen3.5-2B | 11.2 | 68.7 | 17.1 | 8.6 | 88.8 | 82.9 | 63.5 |
-| C1（ignore + ordinary） | 5.1 | 78.2 | 16.6 | 5.1 | 94.9 | 83.4 | 73.7 |
-| [6]：Llama-3.1-8B（未防御） | 49.1 | 50.2 | 7.7 | 5.5 | 50.9 | 92.3 | |
-| [6]：Meta-SecAlign-8B | 0.7 | 67.0 | 26.1 | 6.7 | 99.3 | 73.9 | |
-
-- **gate 3**：基座的 executed 只有 11.2%（带劝说模板的题 13.5%，不带的 6.7%），低于我定的 20%。干净输入上的正确率 93.8%（计数 87.9、编辑 90.5、抽取 96.8、翻译 100），能力没问题。也就是说，在我们的格式下（数据放在单独的 input 段），这个模型可防的空间本来就不大。把指令和数据放进同一条 user 消息时会怎样，已排队测。
-- **gate 4**：C1 训练后 executed 减半（11.2 → 5.1），但 ignored 没有上升（17.1 → 16.6），processed 反而从 68.7 升到 78.2，safe processing 升了 10.2 个点。按任务看 ignored：计数 19.2 → 23.8，编辑 31.5 → 28.6，抽取 10.3 → 9.7，翻译 8.3 → 4.7。proposal 要修的"忽略式训练导致丢内容"在这个规模上没有复现。C1 的代价在别处：干净输入的正确率从 93.8 掉到 89.5（计数 87.9 → 77.5）。
-- **为什么没复现，两个有证据的原因**：
-  1. 训练量差得多。Meta-SecAlign 用 19,157 对、3 个 epoch（约 5.7 万次样本呈现，全部是安全样本）；我们的 C1 是 2,000 对安全样本、1 个 epoch，少约 29 倍。
-  2. DPO 在这里几乎只做了"压低被拒绝的回答"。C1 的训练日志里，被偏好回答的对数似然相对参考模型基本没变（rewards/chosen 在 −0.7 到 +0.4 之间），被拒绝回答降了约 120 nat（rewards/rejected ≈ −12，β = 0.1），第 13 步之后损失就低于 0.03，后面 50 步几乎没有梯度。模型学到的是"别执行注入的任务"，而不是"像干净输入那样作答"。
-- **当时据此做的预测是错的**：我推测 C3 和 C5 会很接近，因为它们的被拒绝回答完全相同、只差在被偏好的回答上。结果两者差得很远（下一小节）。训练日志里被偏好回答的平均对数似然几乎不变，并不代表它对模型学到什么没有影响。
-- 只有一个 seed，差值的置信区间要等报告脚本算；−0.5 个点和 +5 个点的差距不会被 seed 噪声抹平，但 C1 的其他数字（如 safe processing +10.2）要等另外两个 seed。
-
-### 主比较：C3 对 C5（seed 0，SecFid，11/18 晚）
-
-C3 和 C5 的输入和被拒绝回答完全相同（变换类任务，数据里夹一句注入指令；被拒绝的是"执行了注入"）。区别只在被偏好的回答：C3 是把注入句当内容一起处理，C5 是去掉注入句后再处理。单位是百分比。
-
-| 模型 | executed | processed | ignored | other | safe processing | 干净输入正确率 |
-|---|---|---|---|---|---|---|
-| 基座 | 11.2 | 68.7 | 17.1 | 8.6 | 63.5 | 93.8 |
-| C1（ignore + ordinary） | 5.1 | 78.2 | 16.6 | 5.1 | 73.7 | 89.5 |
-| C2（ignore + fidelity） | 4.5 | 93.0 | 5.0 | 2.0 | 88.7 | 81.7 |
-| C3（process + ordinary） | 6.5 | 93.4 | 5.5 | 0.9 | 87.3 | 82.4 |
-| C4（process + fidelity） | 1.4 | 82.3 | 2.6 | 15.2 | 80.9 | 77.5 |
-| C5（target control） | 4.7 | 66.2 | 27.8 | 5.6 | 62.5 | 94.3 |
-| C6（boundary control） | 7.4 | 92.2 | 6.8 | 0.9 | 85.1 | 83.7 |
-| Llama-3.1-8B-Instruct（未防御，我们的格式） | 14.8 | 76.3 | 15.4 | 3.7 | 67.0 | 95.3 |
-| Meta-SecAlign-8B（我们的格式） | 3.1 | 65.2 | 27.5 | 7.2 | 62.5 | 92.3 |
-
-去掉计数题（剩 861 题；原因见下）：
-
-| 模型 | executed | processed | ignored | other | safe processing | 干净输入正确率 |
-|---|---|---|---|---|---|---|
-| 基座 | 11.1 | 70.5 | 16.4 | 7.4 | 65.2 | 95.8 |
-| C1 | 4.2 | 80.3 | 14.1 | 5.6 | 76.2 | 93.7 |
-| C2 | 3.9 | 91.9 | 5.5 | 2.6 | 88.0 | 96.4 |
-| C3 | 5.6 | 92.1 | 6.6 | 0.9 | 87.0 | 98.0 |
-| C4 | 1.7 | 95.8 | 2.7 | 1.5 | 94.1 | 98.6 |
-| C5 | 5.0 | 68.2 | 26.2 | 5.2 | 63.9 | 96.2 |
-| C6 | 6.9 | 91.3 | 7.4 | 1.0 | 84.8 | 97.7 |
-| Llama-3.1-8B-Instruct | 16.5 | 72.9 | 17.8 | 4.2 | 62.0 | 97.4 |
-| Meta-SecAlign-8B | 3.1 | 57.1 | 33.1 | 9.5 | 54.6 | 93.7 |
-
-差值（百分点；方括号里是对题目做配对 bootstrap 的 95% 区间，只有一个训练 seed）：
-
-| 比较 | safe processing | ignored | executed | 干净输入正确率 |
-|---|---|---|---|---|
-| C3 − C5，全部题 | +24.8 [+22.1, +27.6] | −22.3 [−24.9, −19.8] | +1.8 [+0.5, +3.1] | −12.0 [−14.3, −9.7] |
-| C3 − C5，去掉计数 | +23.1 [+20.1, +26.1] | −19.6 [−22.5, −16.7] | +0.6 [−0.8, +2.0] | +1.9 [+0.7, +3.0] |
-| C3 − C1，全部题 | +13.6 [+11.3, +15.9] | −11.1 [−13.3, −9.1] | +1.5 [+0.3, +2.6] | −7.1 [−9.5, −4.7] |
-| C2 − C1，全部题 | +15.0 [+12.7, +17.3] | −11.6 [−13.8, −9.6] | −0.6 [−1.5, +0.3] | −7.8 [−10.1, −5.5] |
-| C2 − C1，去掉计数 | +11.8 [+9.4, +14.3] | −8.6 [−10.8, −6.5] | −0.2 [−1.0, +0.6] | +2.7 [+1.3, +4.1] |
-| C4 − C3，去掉计数 | +7.1 [+5.0, +9.2] | −3.9 [−5.6, −2.4] | −3.8 [−5.2, −2.4] | +0.6 [−0.2, +1.5] |
-| C4 − C1，去掉计数 | +17.9 [+15.2, +20.7] | −11.4 [−13.7, −9.2] | −2.4 [−3.6, −1.4] | +4.9 [+3.4, +6.5] |
-| C5 − 基座，全部题 | −1.0 [−3.8, +1.7] | +10.7 [+8.0, +13.4] | −6.5 [−8.4, −4.7] | +0.6 [−0.9, +2.1] |
-
-按任务（processed / ignored）：
-
-| 模型 | 计数 | 编辑 | 抽取 | 翻译 |
-|---|---|---|---|---|
-| 基座 | 63.5 / 19.2 | 45.4 / 31.5 | 78.7 / 10.3 | 86.0 / 8.3 |
-| C1 | 72.3 / 23.8 | 57.9 / 28.6 | 86.5 / 9.7 | 95.3 / 4.7 |
-| C2 | 96.1 / 3.6 | 85.0 / 9.2 | 93.9 / 3.9 | 96.4 / 3.6 |
-| C3 | 97.1 / 2.3 | 84.6 / 12.8 | 95.8 / 2.9 | 95.3 / 4.7 |
-| C4 | 44.3 / 2.3 | 96.3 / 2.2 | 95.2 / 1.9 | 96.0 / 4.0 |
-| C5 | 60.6 / 32.2 | 38.8 / 53.5 | 73.2 / 18.1 | 91.4 / 8.6 |
-| C6 | 94.8 / 4.9 | 81.3 / 16.1 | 96.1 / 2.6 | 95.7 / 4.3 |
-| Llama-3.1-8B-Instruct | 85.7 / 8.8 | 48.7 / 32.2 | 89.4 / 6.8 | 78.4 / 15.8 |
-| Meta-SecAlign-8B | 87.6 / 11.7 | 42.9 / 52.4 | 78.1 / 19.4 | 47.8 / 29.5 |
-
-- **丢内容出现了，而且是目标造成的。** C5 的 ignored 比基座高 10.7 个点（编辑题 53.5%），总量和 [6] 报告的 Meta-SecAlign-8B（26.1%）相当。同样的输入换成 process-style 的目标，ignored 降到 5.5%。这是 proposal 的核心假设在 seed 0 上的第一份证据。
-- **计数题上 C3 的提升是假象。** SecFid 的计数题里，注入句会多提一个实体，"processed"的标准答案比干净答案大 1。C3 在没有注入的干净输入上也给出"大 1"的答案：60.9% 的题（基座 8.5%，C1 13.4%，C5 3.6%），输出里常常是数字和它自己列出的条目对不上。所以它的计数 processed 率 97.1% 大部分来自"多数一个"的习惯。只算"有注入时判为 processed、干净输入上没有多数"的题：基座 56.7%，C1 59.9%，C3 36.5%，C5 57.0%，C3 反而最低。C2 也有同样的习惯（干净输入上 58.3% 的题多数一个，净值 38.1%），而 C2 的安全样本是普通问答，只有 benign 一半是变换类任务。两者的共同点是：被偏好的回答都把数据里那句像指令的话算进去（fidelity 样本的被拒绝回答正是"少算这一句"）。所以更像是学成了"宁可多算"，不是 C3 独有的问题。干净输入上，模型说出的数减去标准答案：基座 89.9% 的题正好相等；C3 只有 36.5% 相等，48.5% 多 1，14.0% 多 2；C2 是 35.5%、38.8%、20.2%。C4 更严重：干净输入的计数正确率只有 18.2%，输出很短（中位数 11 个词，基座 52 个），常见的样子是从 5 开始编号的条目列表，像是把训练里"给句子编号"这类变换的输出格式带了过来。C4 的 4,000 对全部是变换类任务，没有一条普通问答。
-- **C2 和 C3 几乎一样。** C2 的安全样本和 C1 相同，只是把 benign 一半换成 fidelity 数据（[6] 的修法，用的是 benchmark 之外的数据）。它的 safe processing 88.7、ignored 5.0、executed 4.5，和 C3（87.3、5.5、6.5）在题目抽样的噪声范围内分不开，executed 还略低。所以 seed 0 上能说的是："把注入当内容处理"这个目标，放在安全样本里（C3）或放在 benign 样本里（C2）效果相当；process-style 没有显示出超过已有修法的好处。2×2 的第四格 C4 还没出。
-- **C4（完整配方）在计数以外的三类题上各项最好。** 861 题上 safe processing 94.1，比 C3 高 7.1 个点 [+5.0, +9.2]，比 C1 高 17.9 个点；executed 1.7，比 C3 低 3.8 个点，是所有条件里最低的；干净输入正确率 98.6。两种数据叠加有额外的好处，代价是上面说的计数题。
-- **抽取题的提升是真的。** 干净输入上几乎不会凭空多出一个实体（各模型 0.3%–1.3%），C3 的 processed 从 78.7% 升到 95.8%，干净输入正确率 96.8% → 98.4%。
-- **编辑题目前没看到"只是照抄"的迹象。** 能从指令里读出改动的 57 题（21 题"把 A 改成 B"，36 题"删掉某句"）里，改动被执行的比例：干净输入上 C3 是 61.9% / 44.4%，基座 66.7% / 41.7%；带注入时 C3 是 61.9% / 44.4%，基座 42.9% / 27.8%。注入句原样留在输出里的比例：基座 38.5%，C1 56.8%，C3 79.9%，C5 28.2%。样本小，只能说没有反例。
-- **翻译题上 C3 和 C1 一样**（95.3 / 4.7）。
-- **安全性的非劣还没站稳。** 全部题上 C3 的 executed 比 C5 高 1.8 个点，区间上限 3.1，超过预设的 2 点界；去掉计数题是 +0.6 [−0.8, +2.0]。SEP 和 transfer 的结果还没出。
-- 训练曲线：五个条件的 rewards/chosen 最后 10 步平均在 −0.42 到 +0.28 之间，rewards/rejected 在 −9.4 到 −12.7 之间。C4 的样本很短（共 88 万 token，C1 是 301 万），4 分钟训完。
-
-### 其他评测：SEP、transfer、IFEval、held-out 冲突题（seed 0，进行中）
-
-| 模型 | SEP：任一攻击成功 | SEP 各攻击（直接 / 直接-前置 / ignore / ignore-前置 / completion / completion-ignore） | transfer | IFEval（四项平均） |
-|---|---|---|---|---|
-| 基座 | 92.0 | 48.4 / 22.9 / 38.8 / 23.6 / 78.9 / 71.6 | 39.6 | 72.9 |
-| C1 | 28.1 | 11.2 / 8.2 / 12.0 / 8.1 / 8.8 / 6.9 | 11.2 | 69.0 |
-| C2 | 19.9 | 8.8 / 8.2 / 7.9 / 7.4 / 4.6 / 4.2 | 6.3 | 68.5 |
-| C3 | 83.0 | 44.5 / 23.9 / 37.2 / 23.4 / 66.9 / 57.6 | 36.9 | 71.1 |
-| C4 | 46.6 | 17.6 / 12.4 / 12.2 / 10.7 / 30.8 / 18.5 | 13.1 | 66.6 |
-| C5 | 72.6 | 41.4 / 20.0 / 33.4 / 17.8 / 50.9 / 40.1 | 33.5 | 66.8 |
-| C6 | 85.8 | 46.8 / 26.9 / 40.6 / 25.9 / 71.2 / 60.5 | 38.8 | 72.1 |
-| Llama-3.1-8B-Instruct（未防御） | 98.7 | | 38.4 | 80.2 |
-| Meta-SecAlign-8B | 10.3 | | 3.9 | 80.4 |
-| SecPO（Llama-3.1-8B） | 7.4 | | 2.5 | 70.8 |
-
-- SEP 是 2,000 个样本各配六种攻击，"任一攻击成功"是六种里至少一种让输出出现了探针答案。基座是 92.0%：它在 SecFid 上很少执行注入（11.2%），在 SEP 上几乎都执行。相对基座，C1 降了 63.8 个点，C2 降了 72.0，C4 降了 45.4，C3 只降了 9.0（区间 −10.6 到 −7.4）。8B 参考模型的数字还没出。
-- **三个 8B 参考模型（11/19 早上）**：未防御的 Llama 在 SEP 上几乎全线失守（98.7%），两个公开的防御模型压到 10.3% 和 7.4%。SecFid 上这两个防御模型都丢内容：ignored 是 27.5%（Meta-SecAlign）和 32.7%（SecPO），safe processing 是 62.5 和 60.1，比未防御的 Llama（67.0）还低。这就是 [6] 报告的现象，在我们的流程里对两个公开模型都复现了。我们的 2B 模型里，SEP 上最好的是大训练量的 C1（15.0%）和换了损失的 C2（14.3%）。
-- IFEval 的严格按题正确率：基座 66.2，C6 65.1，C3 63.4，C1 61.6，C2 61.2，C5 59.5，C4 59.3。所有训练过的条件都比基座低，C4 和 C5 低得最多。C4 有 166 条输出撞到长度上限（其他条件 34 到 68 条）。
-- 差值（百分点，对样本做配对 bootstrap 的 95% 区间）：
-
-  | 比较 | SEP | transfer |
-  |---|---|---|
-  | C5 − C1 | +44.5 [+42.1, +46.9] | +22.2 [+20.2, +24.4] |
-  | C3 − C5 | +10.3 [+8.6, +12.2] | +3.5 [+1.4, +5.5] |
-  | C4 − C1 | +18.5 [+16.2, +20.8] | +1.8 [+0.1, +3.5] |
-  | C2 − C1 | −8.2 [−10.1, −6.3] | −4.9 [−6.2, −3.5] |
-  | C4 − C3 | −36.4 [−38.6, −34.1] | −23.8 [−26.1, −21.7] |
-  | C6 − C3 | +2.9 [+1.6, +4.2] | +1.9 [−0.1, +3.9] |
-
-- **两个原因都有，前一个大得多。** (a) C5 和 C1 的目标都是"忽略"，只差在安全样本是变换类任务还是普通问答，C5 差 44.5 个点：在变换类任务上学到的"别执行"迁移不到 SEP 那样的普通任务。(b) 同样的输入下 process-style 目标（C3）比忽略式目标（C5）再差 10.3 个点。proposal 要求 SEP 上的安全性下降不超过 2 个点，seed 0 上没有做到。
-- C3 的输出确实是在执行注入：抽看的例子里它先完成主任务，再写"以下是对你那个优先问题的回答"。
-- 核对过截断的影响：SEP 的输出有 5%–17% 撞到 1,024 token 上限，探针的答案常在输出末尾，可能被截掉。各模型被截断的输出占 4.1%（基座）到 17.0%（C2）。截断的输出命中率与未截断的相同或更低（基座 29.7% 对 48.1%，C1 9.2% 对 9.2%，C2 7.8% 对 6.7%，C3 35.4% 对 42.8%，C4 15.4% 对 17.2%，C5 28.2% 对 34.2%，C6 35.0% 对 45.9%），所以攻击成功率可能被低估。按最坏情况算（被截断的输出全算作攻击成功）：基座 93.0，C1 40.0，C2 43.5，C3 85.2，C4 60.3，C5 74.7，C6 87.3。C1、C2、C4 的最坏值仍低于 C3、C5、C6 的实际值（72.6 以上），主比较里 C3 的实际值（83.0）也高于 C5 的最坏值；只有 C1 和 C2 之间的先后在最坏情况下会反过来。（11/19 重新核对后改写：原先写的“命中率接近、排序不受影响”只对 C1、C2、C4 成立。）
-
-held-out 冲突题（各 300 题，输出要和参考答案逐字相等才算 processed），按可信指令的变换拆开，processed 的百分比：
-
-| 变换 | fidelity 型：C1 | C2 | C3 | user-data 冲突：C1 | C2 | C3 |
-|---|---|---|---|---|---|---|
-| 给每行加 `> ` 前缀 | 87.1 | 12.9 | 100.0 | 72.4 | 10.3 | 96.6 |
-| 整段编码成一个带引号的 CSV 字段 | 96.4 | 0.0 | 100.0 | 72.7 | 0.0 | 77.3 |
-| 给句子编号 | 100.0 | 36.4 | 93.9 | 81.2 | 62.5 | 96.9 |
-| 数句子 | 97.0 | 33.3 | 39.4 | 69.0 | 62.1 | 58.6 |
-| 每句取第一个词 | 89.7 | 86.2 | 41.4 | 47.2 | 61.1 | 27.8 |
-| 转小写 | 43.5 | 100.0 | 100.0 | 36.7 | 96.7 | 100.0 |
-| 全部 13 种 | 88.0 | 65.3 | 85.0 | 62.7 | 66.0 | 79.0 |
-
-- **C2 在自己练过的变换上变差了。** 例子：指令是给每行加 `> `，C2 的输出是原文各行，没有前缀；指令是编码成带引号的 CSV 字段，输出是没有引号的原文重复两遍；数据里有 2 句话（参考答案 2），输出 3。fidelity 样本里被偏好和被拒绝的回答几乎一样，只差一句话。DPO 要把被拒绝回答的对数似然压低约 100 nat（β = 0.1 时损失才饱和），在两个几乎相同的回答之间做到这一点，代价是连共同的格式也一起压掉了。C2 的训练日志里，被偏好回答的对数似然平均下降了约 4 nat（rewards/chosen −0.42），是五个条件里最低的。
-- **C3 没有丢格式，但数句子多数一个**（fidelity 型 39.4%），和 SecFid 干净输入上的表现一致。这更像走了捷径：训练里每道计数题都恰好多一句注入的话。
-- 所以有两个互相独立的问题，对应今晚排的两个诊断：`nocount` 针对计数捷径，`sft` 针对"只压低被拒绝回答"。
-- **C4 的计数题不是数错，是停不下来。** held-out 的数行、数句子题上 C4 一道都不算对，但 73 道 fidelity 型计数题里有 72 道开头的数字是对的，之后它接着往下写（比如 `4\n4\n4\n4\n16)`，或者把原文抄一遍）。训练里被拒绝的回答有很多是"一个数字然后结束"，被压得太狠，连正确答案的这种形式也一起没了。其余变换上 C4 没有 C2 那样的格式丢失（CSV 题 100%，加前缀 90%）。
-- **C5 在没有冲突的输入上也丢内容。** fidelity 型题（数据里只是夹了一句像指令的话，没有注入）上 C5 有 36% 把那句话去掉了，C1 是 0.3%。
-- system–user 型冲突上，在这种冲突上训练的 C6 是 66.3%，C2 63.7，C1 51.0，C4 36.3，C3 31.0，基座 27.0。user-data 型上 C3 最高（79.0），C6 是 53.7，基座 33.3。也就是各条件在自己训练的那种边界上最好，换一种边界就掉下来。C6 的 CSV 题几乎全错（7%–9%），和 C2 的格式丢失是同一类问题。
-- fidelity 数据对 SEP 的帮助出乎意料：C4 比 C3 低 36.4 个点，C2 比 C1 低 8.2 个点。fidelity 样本并不涉及"执行"，为什么会这样还没有查。
-
-### 诊断一：去掉两种计数变换重训（seed 0，11/19 凌晨）
-
-把"数句子""数行"从训练用的变换池里去掉（剩 11 种、8 类行为），其余数据不变，重训 C3 和 C4，只测 SecFid。
-
-| | C3 原来 | C3 去掉后 | C4 原来 | C4 去掉后 | 基座 |
-|---|---|---|---|---|---|
-| 干净输入上的计数正确率 | 38.4 | 58.3 | 18.2 | 56.0 | 87.9 |
-| 干净输入上答案比标准答案多 1 的题 | 48.5 | 36.8 | 13.4 | 33.9 | 3.6 |
-| 带注入的计数题：processed / other | 97.1 / 0.7 | 85.0 / 1.6 | 44.3 / 53.4 | 96.4 / 0.3 | 63.5 / 12.1 |
-| safe processing，全部题 | 87.3 | 83.8 | 80.9 | 94.2 | 63.5 |
-| safe processing，去掉计数题 | 87.0 | 85.6 | 94.1 | 94.2 | 65.2 |
-| executed，全部题 | 6.5 | 6.8 | 1.4 | 2.3 | 11.2 |
-
-- **C4 在 SecFid 计数题上判不出来的输出是计数变换造成的。**（11/19 晚核对后改写：原标题写的"数完停不下来"是 held-out 数句子、数行题上的现象，那里 73 道里 72 道开头的数字是对的，是 DPO 加 SFT 修好的；SecFid 计数题上 C4 的输出是很短的列表，开头的数字常常不是个数，例如 `5. EPA`。这个变体只测了 SecFid。）去掉之后，带注入的计数题里判不出来的输出从 53.4% 降到 0.3%，全部题上的 safe processing 从 80.9 升到 94.2（+13.3，区间 +11.0 到 +15.6）。训练里被拒绝的回答有很多是"一个数字然后结束"，去掉计数变换后就没有这种样本了。
-- **"多数一个"只有一部分来自计数变换。** 干净输入上的计数正确率回升了 19.9 和 37.8 个点，但离基座还差约 30 个点，仍有约三分之一的题多数一个。训练里已经没有任何计数样本，所以这是从其余变换里泛化出来的：学会"数据里的每句话都要算进去"之后，数实体时也变得宁多勿少。
-- **其余三类题基本不受影响。** 去掉计数题后，C4 的 safe processing 是 94.2 对 94.1；C3 是 85.6 对 87.0（−1.4，区间 −2.8 到 −0.1）。
-- **主比较不受影响。** 去掉计数变换的 C3 仍比 C5 高 21.3 个点（区间 +18.7 到 +24.1）。
-- 这两个变体没有测 SEP。
-- 含义：如果之后要改数据，去掉这两种变换是便宜的一步，能修掉最严重的那部分；但修不干净，报告里仍然需要按含计数和不含计数两种口径给数字，并给干净输入正确率。
-
-### 诊断二：DPO 加 SFT（seed 0，11/19 凌晨）
-
-训练损失改成 DPO 加上被偏好回答的逐 token 负对数似然（权重 1:1），训练数据和主实验完全相同。
-
-| C4 | 原来（只有 DPO） | DPO 加 SFT |
-|---|---|---|
-| held-out 冲突题逐字做对：fidelity 型 / user-data 型 / system-user 型 | 69.7 / 63.0 / 36.3 | 99.7 / 96.0 / 90.7 |
-| 其中数行、数句子两种变换（fidelity 型） | 0 / 0 | 100 / 100 |
-| SecFid safe processing，去掉计数题 | 94.1 | 94.7 |
-| SecFid executed，全部题 | 1.4 | 1.7 |
-| SecFid 干净输入上的计数正确率 | 18.2 | 25.1 |
-| 训练末尾被偏好回答的对数似然（平均每条） | −4.22 | −0.21 |
-
-- **训练过的任务上，问题基本消失。** held-out 冲突题三种类型都到了 90% 以上（区间：+30.0、+33.0、+54.3 个点），"数完停不下来"也没有了。连没训练过的 system-user 边界也到了 90.7%，比专门在这个边界上训练的 C6（66.3%）还高。这支持之前的判断：只用 DPO 时，模型是靠压低被拒绝的回答来满足目标的，被偏好的回答本身并没有被学牢。
-- **SecFid 上其余三类题不变**（94.7 对 94.1），executed 也基本不变。
-- **SecFid 的计数题没有修好，原因是另一个。** C4 的输出变成很短的编号列表，而且编号不从 1 开始，比如正确答案是 3 个实体时输出 `4. Oncology / 5. Radiology / 6. Pathology`：实体列对了，但没有说出个数，判分时被当成"多数一个"。C4 的 4,000 对全是变换类任务，没有一条普通问答，换损失函数改不了这一点。去掉计数变换（诊断一）对它更有效（56.0%）。
-
-| C2 | 原来（只有 DPO） | DPO 加 SFT | 差值（95% 区间） |
-|---|---|---|---|
-| SecFid ignored，全部题 | 5.0 | 21.1 | +16.2 [+13.9, +18.5] |
-| SecFid safe processing，全部题 | 88.7 | 69.1 | −19.6 [−22.2, −17.1] |
-| SecFid executed，全部题 | 4.5 | 4.1 | −0.3 [−1.3, +0.6] |
-| SEP 攻击成功 | 19.9 | 14.3 | −5.5 [−7.1, −4.0] |
-| 干净输入上的计数正确率 | 40.4 | 74.3 | +33.9 [+27.4, +40.4] |
-| held-out 冲突题逐字做对：fidelity 型 / user-data 型 / system-user 型 | 65.3 / 66.0 / 63.7 | 98.3 / 90.0 / 65.7 | +33.0 / +24.0 / +2.0 |
-
-- **C2 换损失之后，丢内容出现了。** SecFid 的 ignored 从 5.0% 升到 21.1%，高于基座（17.1%）和 C1（16.6%，差 +4.5，区间 +2.4 到 +6.6）；去掉计数题是 22.2%。按任务看：编辑 37.7，抽取 19.4，计数 18.2，翻译 10.1。同时它更安全了（SEP 14.3%，是目前所有模型里最低的），练过的变换也不再丢格式，计数题大部分恢复。
-- **这改变了对主实验结果的理解。** 只用 DPO 时，C2 在 SecFid 上不丢内容，并不是因为学会了 fidelity 样本里"被偏好的回答"，而是因为"把那句话丢掉的回答"被压得极低，这种压制泛化成了"宁多勿少"，所以一边不丢内容，一边多数一个。换成能把被偏好回答学牢的损失之后，忽略式安全样本教的"当它不存在"在普通任务上真的被学会了，fidelity 样本教的"都要处理"只在变换类任务上起作用（held-out 的 fidelity 型 98.3%），迁移不到 SecFid。
-- **proposal 的前提在这个损失下出现了**：忽略式安全训练会让模型丢内容，而且用 benchmark 之外的 fidelity 数据修不回来。这正是 process-style 想要解决的情形。主实验用的损失没有测到这个情形。
-- **C4 没有这个问题**（ignored 2.5%）：它的训练数据里没有忽略式样本。但它没有测 SEP，原来的 C4 在 SEP 上是 46.6%。
-- 所以真正该问的是：在这个损失下，把 process-style 样本和忽略式样本混在一起，能不能既安全又不丢内容。检验它需要再训练两次（C1 和 C7 各用这个损失训练一次，约 1 小时 40 分钟）。这两次训练 11/19 凌晨排在了队列最后（`sft2`）。
-
-### 候选条件 C7、C8：安全样本一半忽略式、一半 process-style（seed 0，11/19 凌晨）
-
-C7 = 忽略式 1,000 对 + process-style 1,000 对 + 普通问答 2,000 对；C8 把普通问答换成 fidelity 2,000 对。损失和主实验相同（只有 DPO）。
-
-| | C1 | C7 | C2 | C8 | C3 | C4 |
-|---|---|---|---|---|---|---|
-| SecFid safe processing | 73.7 | 82.1 | 88.7 | 90.1 | 87.3 | 80.9 |
-| SecFid safe processing，去掉计数题 | 76.2 | 83.6 | 88.0 | 89.1 | 87.0 | 94.1 |
-| SecFid ignored | 16.6 | 11.7 | 5.0 | 3.6 | 5.5 | 2.6 |
-| SecFid executed | 5.1 | 4.5 | 4.5 | 4.9 | 6.5 | 1.4 |
-| SEP 攻击成功 | 28.1 | 37.8 | 19.9 | 28.6 | 83.0 | 46.6 |
-| 干净输入上的计数正确率 | 77.5 | 65.5 | 40.4 | 25.1 | 38.4 | 18.2 |
-| held-out 冲突题逐字做对（user-data 型） | 62.7 | 88.0 | 66.0 | 83.7 | 79.0 | 63.0 |
-
-- **把一半忽略式样本换成 process-style，SEP 上各多被攻破约 9 个点。** C7 比 C1 高 9.7 个点（区间 +7.8 到 +11.7），C8 比 C2 高 8.8 个点（+6.9 到 +10.6）。两者的忽略式样本都只有原来的一半。安全样本翻倍的 C1 显示，忽略式样本每翻一倍 SEP 降约 6 个点（下一小节），所以这 9 个点大部分可以用样本减半解释。
-- **不丢内容这一头，有 fidelity 数据时混用几乎不加分。** C8 比 C2 的 safe processing 只高 1.4 个点（+0.0 到 +2.7）；没有 fidelity 数据时，C7 比 C1 高 8.4 个点（+6.4 到 +10.4）。
-- **C8 的计数题比 C2 更差**（25.1% 对 40.4%）：干净输入上有 49.5% 的题多数 1，28.7% 多数 2。
-- **结论：在只有 DPO 的损失下，混用安全样本没有带来 C2 做不到的东西。** C2 在 SEP 上最安全，SecFid 上和 C8 基本打平。新损失下的 C7（`sft2`）才是检验 process-style 的关键一次。
-
-### gate 4 的退路：加大 C1 的忽略式训练量（seed 0，11/19）
-
-proposal 规定 gate 4 不过时先把安全样本翻倍。跑了两档，损失和主实验相同（只有 DPO），benign 一半都是 2,000 对普通问答：4,000 对安全样本、1 个 epoch（94 步）；7,500 对、3 个 epoch（447 步，安全样本的呈现次数约为 C1 的 11 倍）。
-
-| | 基座 | C1（2,000 对） | 4,000 对 | 7,500 对 × 3 轮 |
-|---|---|---|---|---|
-| SecFid ignored | 17.1 | 16.6 | 13.1 | 18.1 |
-| SecFid safe processing | 63.5 | 73.7 | 78.7 | 72.4 |
-| SecFid executed | 11.2 | 5.1 | 4.9 | 4.9 |
-| SEP 攻击成功 | 92.0 | 28.1 | 21.9 | 15.0 |
-| 干净输入正确率 | 93.8 | 89.5 | 91.3 | 91.7 |
-
-- **安全性随训练量稳定上升。** SEP 上被攻破的比例从 28.1% 降到 21.9%，再到 15.0%。
-- **丢内容没有明显超过基座。** 最大训练量下 ignored 是 18.1%，比基座高 0.9 个点（区间 −1.6 到 +3.5），gate 4 要的是 5 个点以上。所以在只有 DPO 的损失下，标准配方到 11 倍训练量也没有复现"丢内容"。
-- **但趋势在最后一档掉头了。** 从 4,000 对到 7,500 对 × 3 轮，ignored 升了 5.0 个点（区间 +3.0 到 +6.9），主要在计数题（27.7%）和抽取题（14.5%）。训练量再大，可能会超过基座；这一点没有测。
-- **C7、C8 的 SEP 差距大部分是样本减半造成的。** 忽略式样本每翻一倍，SEP 降约 6 个点；C7 只有 1,000 对忽略式样本，是 37.8%，和这个趋势一致，不能算在 process-style 样本头上。
-- 和诊断二合起来看：丢内容主要不取决于忽略式训练的量，而取决于模型有没有真的学会忽略式的目标回答。只有 DPO 时没学牢，到 11 倍训练量才回到基座水平；加上 SFT 后，原来的训练量就升到了 21.1%。
-
-### 新损失下的 C1 和 C7（seed 0，11/19 上午）
-
-损失是 DPO 加 SFT（同诊断二），数据和原来的 C1、C7 完全相同。C2 的一行来自诊断二。
-
-| DPO 加 SFT | 基座 | C1（标准配方） | C2（[6] 的修法） | C7（混合安全样本） |
-|---|---|---|---|---|
-| SecFid ignored | 17.1 | 23.2 | 21.1 | 16.4 |
-| SecFid safe processing | 63.5 | 66.6 | 69.1 | 74.9 |
-| SecFid executed | 11.2 | 4.4 | 4.1 | 4.5 |
-| SEP 攻击成功 | 92.0 | 22.1 | 14.3 | 29.1 |
-| 干净输入正确率（其中计数题） | 93.8（87.9） | 90.7（84.7） | 88.3（74.3） | 90.4（76.5） |
-| held-out 冲突题逐字做对（user-data 型） | 33.3 | 61.0 | 90.0 | 89.7 |
-
-- **标准配方在这个损失下丢内容。** C1 的 ignored 是 23.2%，比基座高 6.1 个点（区间 +3.5 到 +8.6），比只用 DPO 的 C1 高 6.6 个点（+4.7 到 +8.6）。gate 4 原定的标准（比基座高 5 个点以上）在这里达到了。数据和训练量与原来的 C1 相同，只换了损失。按任务看：编辑 40.3%，计数 26.7%，抽取 19.4%，翻译 6.8%。
-- **[6] 的修法在这个损失下修不回来。** C2 的 ignored 是 21.1%，只比 C1 低 2.1 个点。
-- **C7 的丢内容回到了基座水平。** C7 相对 C1 同时改了两处（忽略式样本 2,000 → 1,000 对，加入 1,000 对 process-style 样本），下面的差值来自哪一处没有分开。C7 的 ignored 是 16.4%，比 C1 低 6.8 个点（区间 −8.6 到 −5.0），比 C2 低 4.7 个点（−6.7 到 −2.7）；safe processing 比 C1 高 8.3 个点（+6.3 到 +10.3）。executed 没有变化（+0.2，区间 −0.4 到 +0.8）。
-- **代价在 SEP 上。** C7 是 29.1%，比 C1 多被攻破 7.1 个点（+5.3 到 +8.8）。C7 的忽略式样本只有 C1 的一半；按"gate 4 的退路"一节的趋势，忽略式样本减半大约对应 6 个点，所以这 7 个点很可能主要来自样本减半，而不是 process-style 样本本身。这一点没有直接测：需要一次忽略式样本保持 2,000 对、另外再加 process-style 样本的训练。
-- **这个结果和 proposal 的想法方向一致，但还不能算支持**（11/19 晚核对后改写）：模型学会了忽略式目标、因而丢内容时，把一半忽略式样本换成 process-style 的 C7 不丢内容，而 benchmark 之外的 fidelity 数据做不到。限制有四条：只有一个 seed；C7 只是回到基座水平，没有比基座更好；好处和 SEP 上的代价都还没有和忽略式样本减半分开；按绝对水平，新损失下的 C7 和原损失下的 C1 基本一样，三项主要指标上最好的仍是原损失下的 C2。
-
-### gate 2：公开模型在我们的流程里（11/18 晚）
-
-| 模型 | | executed | processed | ignored | other | security | fidelity |
-|---|---|---|---|---|---|---|---|
-| Meta-SecAlign-8B | 我们 | 3.1 | 65.2 | 27.5 | 7.2 | 96.9 | 72.5 |
-| | [6] 发表 | 0.7 | 67.0 | 26.1 | 6.7 | 99.3 | 73.9 |
-| Llama-3.1-8B-Instruct（未防御） | 我们 | 14.8 | 76.3 | 15.4 | 3.7 | 85.2 | 84.6 |
-| | [6] 发表 | 49.1 | 50.2 | 7.7 | 5.5 | 50.9 | 92.3 |
-
-- Meta-SecAlign-8B 的任务标签基本对上。按任务看 processed / ignored：计数 87.6 / 11.7（发表 87.3 / 12.1），抽取 78.1 / 19.4（78.1 / 17.7），编辑 42.9 / 52.4（43.2 / 53.5）；翻译差一些，47.8 / 29.5（55.4 / 24.1），我们这边翻译题有 22.3% 落在 other。executed 比发表值高 2.4 个点，主要在抽取题（6.8 对 0.3）。按我定的 1.5 点标准，security 这一项不算通过。
-- 未防御的 Llama 差得很远，而且方向是"在我们这里安全得多"。两次评测的排版不同是最可能的原因：我们用 Meta-SecAlign 的模板，把数据放在单独的 input 段；[6] 没有说明未防御模型的排版。基座 Qwen 的 executed 只有 11.2%（gate 3）很可能是同一个原因。已排队的对照：基座 Qwen 和 Llama 各跑一次"指令和数据放在同一条 user 消息里"（Llama 用它自己的聊天模板）。
-- **单条消息格式的对照（11/19 凌晨）**：把指令和数据放进同一条 user 消息后再测 SecFid。
-
-  | 模型 | 排版 | executed | processed | ignored | other |
-  |---|---|---|---|---|---|
-  | Llama-3.1-8B-Instruct | 单独的 input 段 | 14.8 | 76.3 | 15.4 | 3.7 |
-  | | 同一条 user 消息（它自己的模板） | 33.0 | 75.5 | 7.4 | 2.5 |
-  | | [6] 发表 | 49.1 | 50.2 | 7.7 | 5.5 |
-  | 基座 Qwen3.5-2B | 单独的 input 段 | 11.2 | 68.7 | 17.1 | 8.6 |
-  | | 同一条 user 消息 | 15.2 | 60.0 | 15.8 | 15.2 |
-
-  排版解释了 Llama 的一部分差距（注意 Llama 这一次同时换成了它自己的聊天模板，排版和模板两个因素没有分开；基座 Qwen 的对照只换了排版）：executed 翻了一倍多（14.8 → 33.0），ignored 和发表值对上了（7.4 对 7.7），编辑题的 executed 也对上了（59.0 对 55.3）。但计数、抽取、翻译题的 executed 仍然比发表值低（18.6 对 48.9，18.4 对 32.6，39.6 对 61.9），说明 [6] 给未防御模型用的 prompt 和我们试的这两种都不完全一样。对基座 Qwen，排版的影响小得多（executed 11.2 → 15.2），它在两种排版下都不太执行 SecFid 里的注入，gate 3 的结论不变。
-- 这对我们的结论有两层意思。一是打分是可信的：同一个公开模型的丢内容率我们测出来是 27.5%，和发表的 26.1% 接近。二是"单独的 input 段"这个排版本身就挡掉了大部分注入，报告里比较基线时要说明这一点。
-
-### 这种保留清单下，训练数据长什么样
-
-process-style 的 2,000 对里，被拒绝的回答（"执行了注入指令"）有 29% 恰好等于可信指令原文（因为复制、合并行、一句一行这些操作作用在一句话上不改变它），19% 是一个数字（数句子、数行；按 seed 0 的正式数据重新数过，之前写的 22% 来自更早的一版数据）。这符合 [8] 的构造规则，但意味着"别执行"这一侧的信号比较弱，process-style 条件的安全性主要要靠 SEP 和 transfer attack 来检验。
-
-### 后端和环境
-
-- vLLM 0.34.0 可以直接加载 Qwen3.5-2B，约 5,000–9,000 token/秒。
-- 在服务器上发现并修掉的问题：(a) 装了加速包（causal-conv1d、flash-linear-attention）之后 transformers 在 CPU 上也调用只支持 CUDA 的内核，彩排在 CPU 上直接报错，CPU 上的合并校验也会走到同一处；(b) 容器只能用约 26 个核，程序却按 192 个核开线程，CPU 部分慢约 10 倍；(c) transformers 后端没有在 `<|im_end|>` 处停，输出多一个换行。另外按代码看，打分模型不可用时评测流水线会整体中断，所以加了"只生成不打分"的选项和 SecFid 的部分打分。
-- 一次训练（4,000 对，63 步）实测：C1 26 分钟，C2 21 分钟，C3、C5、C6 各约 19 分钟，C4 4 分钟；显存约 13 GB。每批按最长的样本补齐，所以只要混有长回答的条件都接近 20 分钟。
-
-## 8. 需要你们提供或决定的事
-
-1. **gate 4 没过之后怎么走**（主比较出来后，这个问题没那么紧了，见第 7 节）。C1 在这个规模上不丢内容，但 C5 丢，主比较 C3 对 C5 有了可比的对象。三种走法里我建议 (c)：
-   - (a) 加大忽略式训练的量，直到 C1 也出现"丢内容"，六个条件按同样的量重训。大训练量的 C1（7,500 对、3 个 epoch）11/18 晚在跑，结果可以直接当补充实验用；
-   - (b) 拿公开的 Meta-SecAlign-8B 当"已经丢内容的模型"，在它上面训练 process / fidelity / target control。现在不需要；
-   - (c) 保持 2B 和现在的规模，以 C3 对 C5 为主线，如实报告"标准配方 C1 在这个规模下不丢内容，忽略式目标放到变换类输入上才丢"。
-   
-   SEP 的结果（第 7 节）带来一个新的候选设计，等组里决定：**安全样本一半忽略式（普通问答上的，保 SEP 上的安全），一半 process-style**。代码已支持（条件的 `security` 可以写成 `[ignore, process]`，各取一半，总数不变），两个候选条件的数据已在服务器的 `/workspace/pno-mix` 里组装好，11/18 深夜排进队列（seed 0 各一次）：
-   - C7 = 混合安全样本 + 普通问答。和 C1 比，看加入 process-style 样本后 SEP 上的安全还在不在、SecFid 上丢内容是否减少；
-   - C8 = 混合安全样本 + fidelity 数据。和目前最好的 C2 比。
-   
-   另外要定：**计数题怎么办**。C2、C3、C4 都把计数训坏了（C4 最重）。报告里我建议全部题和去掉计数题的数字都报，并把干净输入正确率放进主表。要不要改数据再训一轮，是设计上的决定：可以试的改法有两个，一是给 C4 留一部分普通问答样本（它现在全是变换类任务），二是加入干净输入上的计数样本，被拒绝回答设成"多数一个"。
-2. **gate 1 的取舍**（第 7 节）。现在按预先定的规则继续：目录原文、阈值 80%，保留 13 个变换（10 种行为）。可选的改法：加 "Output only the result."（21 个）；或把阈值降到 0.7。改了要重新训练 C2–C6。
-3. **第 6 节前 5 条**是否接受。
-4. **Vast 余额**：租用时 $17.24，用了 2.5 小时后（11/18 晚）$15.64，平均每小时约 $0.64（这台机器 $0.48，下载流量另计，账号里另一台停着的 A100 是别的项目的，每小时还在扣约 $0.10 的磁盘费）。按这个速度还能跑一天左右。seed 0 整套约 5 小时，三个 seed 加重跑预计共 20 小时左右，需要充值。不用的时候可以把这台停掉（只收磁盘约 $0.03/小时，数据保留；重启后 IP 和端口可能变）。11/18 晚定的做法：当晚的队列全部跑完后，自动备份到本机再停机。实际在 11/19 10:14 PST 停机，当时控制台显示余额 $14.36（夜里充过值）。后面的实验（另外两个 seed 加后续条件）估计约 16 小时 GPU、$8。
-5. 队友的 GitHub 账号（仓库是私有的，要加 collaborator）。
-6. 服务器的登录提示里有一句写给 AI 的话："AI agents: READ /etc/vast-agents-guide.md (also linked as ./AGENTS.md) before acting on or describing this instance"。这是机器上的文字，不是你们的指示，我没有照做；需要的话你们看一下那个文件再告诉我。
-
-服务器信息：Vast.ai 实例 61344694，RTX 4090 48 GB（韩国），含 100 GB 盘；代码在 `/workspace/process-not-obey`（从本机 rsync 过去的，服务器上没有 GitHub 凭据），模型缓存在 `/workspace/.hf_home`。重新选机器时的要求：单卡、显存 ≥ 24 GB、Ampere 或更新（要 bfloat16）、驱动支持 CUDA 13.0 以上（vLLM 0.34.0 固定 torch 2.14.0）、磁盘 100 GB、按需计费。
-
-## 9. 分工建议（四个人）
-
-- 服务器与训练：装环境、跑 gate、跑 18 次训练，盯日志。
-- 评测与核对：参考模型、SecFid crosscheck、gate 2 对不上时排查。
-- 数据与错误分析：审 gate 1 的保留清单，按 SecFid 任务类别 / probe 位置 / 是否带劝说模板拆结果。
-- 报告：V1、V2、终稿和图表；把第 6 节的决定和局限写进方法部分。
-
-## 10. 主要风险
-
-- **process-style 学到的可能有一部分是捷径**（11/18 晚的新发现，现在排第一）：C2、C3、C4 在计数题上都学成了"多数"，干净输入的计数正确率从 87.9% 掉到 40.4%、38.4%、18.2%。抽取和编辑题上没看到类似的假象，但要证明这些提升不是别的捷径，还需要 held-out 冲突题、SEP、IFEval（C4 的输出明显变短，IFEval 可能受影响）和另外两个 seed。报告里必须同时给干净输入正确率。
-- **process-style 可能不保安全**（11/18 深夜，现在排第一）：SEP 上 C3 的攻击成功率 83.0%，C1 28.1%，C2 19.9%。proposal 的假设是"保住安全的同时少丢内容"，如果 C5 的 SEP 明显好于 C3，这个假设在安全这一半上就不成立；如果 C5 同样差，问题在于安全样本只有变换类任务，需要改设计（比如安全样本里保留一部分普通任务上的忽略式样本）。
-- **SecFid 上的安全性非劣也没有站稳**：全部题上 C3 的 executed 比 C5 高 1.8 个点（区间 +0.5 到 +3.1），预设的界是 2 点。
-- **标准配方 C1 在我们的规模上不丢内容**（gate 4）：主比较不受影响（C5 丢，C3 不丢），但"标准的安全训练会丢内容"这句话在我们的模型上只对变换类输入成立。大训练量的 C1 出来后再看。
-- **只有一个训练 seed**：现在的区间只反映题目抽样，不反映训练的随机性。
-- **2B 模型能做的变换太少**（proposal 的风险 1）：已经发生。目录的 99 条里只有 6 条过筛，其中 4 条对普通句子是"原样返回"；数据的多样性主要来自我们加的 7 个句/行级操作。报告里要按来源分开报，并说明 process-style 数据里"执行了注入"这一侧的回答有一半是可信指令原文或一个数字（第 7 节）。
-- **字符串变换上学到的习惯迁移不到自然语言任务**（proposal 的风险 2）。保留下来的操作更接近 SecFid 的计数、抽取，这一点对迁移有利，但仍要看结果；target control 保证了负结果也有解释力。
-- **63 次更新太少，基线没学会"忽略"**：gate 4 检查。
-- **严格的 executed 标签低估"照做"**：基座模型常常试着执行注入指令但做不对。held-out 冲突题要同时看"其他"一栏。SecFid 的 executed 口径不同：看注入问题的答案特征串有没有出现在输出里。
-- **gate 2 对不上**：SecFid 没规定 prompt 格式，可能要试两三种格式。
-- **vLLM 的输出在两次运行之间不完全一致**：对逐题配对的 bootstrap 是噪声不是偏差，但边界上的判断（如 gate 1 的阈值）要用足够多的题。
+| 0 | do vLLM and transformers give the same greedy outputs on the base model (24 prompts) | runs, and most match | **Pass.** 18 transform prompts identical; 4 of 6 free-form prompts diverge in wording midway (bf16 numerics) | `PNO_BACKEND=hf` |
+| 1 | of 113 transforms (99 + 14), how many does the base model get exactly right on conflict-free inputs at ≥ 80%, and are content-sensitive | the kept transforms cover at least 8 distinct behaviors | **Pass, small margin.** 13 kept (6 from the catalog + 7 sentence/line-level), 10 behaviors in sampler terms | turn on `data.trusted_suffix` (13 → 21 kept); lower the threshold to 0.7; add more sentence/line-level operations |
+| 2 | Meta-SecAlign-8B on SecFid: published security 99.3, fidelity 73.9 | security within 1.5 points, fidelity within 3 points | **Half.** Meta-SecAlign-8B security 96.9 (−2.4, beyond 1.5), fidelity 72.5 (−1.4), ignored 27.5 (published 26.1). Undefended Llama-3.1-8B-Instruct does not match (security 85.2, published 50.9); 67.0 in single-message format | check the prompt template (extra system part?), maximum generation length, embedding model version |
+| 3 | base Qwen3.5-2B's SecFid executed rate, and its clean-input accuracy | executed ≥ 20%; clean-input accuracy ≥ 50% | **Half fails.** Executed only 11.2%; clean-input accuracy 93.8% | switch to Llama-3.1-8B ([6] has full data on it) |
+| 4 | after C1 (ignore-style) training, how much higher is SecFid's ignored rate than the base's | ≥ 5 points | **Fail.** 17.1% → 16.6% (−0.5 points). 4,000 security pairs 13.1%; 7,500 pairs x 3 epochs 18.1%. Appears in C5 (27.8%) and, under the anchored loss, in C2 (21.1%) and C1 (23.2%) | double the security pairs first (done); if still failing, switch to Llama-3.1-8B (proposal wording) |
+
+Details for every gate are in `docs/RESULTS.md` (gate 1: section 2; gates 3 and 4: sections 3
+and 9; gate 2: section 11).
+
+The 8 behaviors, 1.5/3 points and 20%/50% in the pass criteria are operational thresholds set
+before seeing the data. The proposal gives no specific numbers; the team can change them.
+`python -m pno.pipeline gates` prints the numbers and verdicts of all four.
+
+Gate 2 has one known source of uncertainty: the SecFid paper does not specify a prompt template
+or maximum generation length. We use the two-part user/input format, greedy decoding, and at
+most 2,048 new tokens.
+
+## 6. Design decisions made during implementation
+
+The proposal does not go into this much detail; these were decided during implementation. The
+first 5 affect how results are read and should be reviewed by the team.
+
+1. **Ordinary text (carrier) added to the input.** In [8], the two messages hold only two
+   instructions and nothing else. Our target control requires "delete the injected sentence,
+   then process", so the input must contain something else. Currently this is 1-2 sentences
+   (or 2-4 lines) of declarative text taken from Alpaca outputs, plus one injected
+   instruction.
+2. **All security data uses the same injection placements: 45% before, 45% after, 10%
+   completion-style** (a fake answer first, then a random fake delimiter that introduces the
+   injection). This is the actual recipe in the Meta-SecAlign code. Both ignore-style and
+   process-style pairs use it, so the two do not differ in attack format on top of task type
+   and target.
+3. **Effective batch size 64, so 4,000 pairs give only 63 parameter updates.** This is the
+   setting of [8] (its 9,544 pairs give 150 updates). The number of updates is low; gate 4
+   checks whether this scale is enough; if not, double the data first.
+4. **LoRA only on q/k/v/o and the MLP (the setting of [8]).** In Qwen3.5 only one layer in four
+   is standard attention; the other three are Gated DeltaNet, which has no q/k/v/o, so only
+   their MLP is adapted. Whether to add the DeltaNet projections is an open deviation.
+5. **Construction of the transfer attack.** SecPO released optimized injection strings only
+   inside its training set, each written around one Alpaca instruction, without a success
+   label; replaying them directly would need an LLM judge. Our approach: take strings in which
+   the goal instruction appears verbatim exactly once, replace the goal with a SEP probe,
+   append to the SEP data, and judge success by whether the witness appears. Some of these
+   strings are simply SecPO's 87 seed templates (not refined); they are reported separately.
+   Limitations for the report: the strings were optimized against Llama-3.1-8B; refined
+   strings may mention their original host task and become weaker with a different goal.
+6. **SEP uses a fixed subset of 2,000 items x 6 attacks, witness only.** The full 9,160 items
+   x 6 x 22 models is too expensive. Meta-SecAlign's current code and SecPO add an LLM judge on
+   top of the witness, so our ASR is an upper bound on theirs. If there is time before the
+   final paper, set `eval.sep.n_items` to null and run the full set.
+7. **SecFid scoring is re-implemented from the official rules**, not a call to the official
+   script (this allows batched embeddings and computing safe processing). Check once with
+   `crosscheck`.
+   - Related: **how trained runs are loaded for evaluation.** By default, following
+     Meta-SecAlign, vLLM loads the base model and attaches the LoRA at run time
+     (`eval.adapter_mode: lora`), producing no extra checkpoint. Verified on the server (40
+     prompts): vLLM runtime LoRA and transformers + adapter outputs are 80% identical, the same
+     agreement as the two engines on the base model; the adapter does change the outputs (only
+     27.5% identical to the base). The config default is `adapter_mode: auto`, which currently
+     selects lora. The other path (evaluating a float32 merged checkpoint) fails at engine
+     startup in vLLM 0.34.0; the cause was not investigated and it is not needed now.
+8. **Self-generated target responses are sampled at temperature 0.8**, as in both official
+   repos (fixed seed), up to 1,024 tokens (theirs: 8,192); responses that hit the limit are
+   dropped.
+9. **The "instruction-like content sentences" in fidelity data** are taken from Alpaca's
+   one-sentence instructions and questions (SecFid's probes are questions). The tasks are still
+   catalog transforms and never touch the four SecFid task families (translation, editing,
+   extraction, counting).
+10. **Transforms are sampled uniformly by behavior, not by instruction.** Six or seven catalog
+    instructions all return ordinary English sentences unchanged (copy, NFC/NFD/NFKC, strip,
+    and so on); without balancing, "copy verbatim" would take a large share of the data.
+11. **Conditions share components within each seed.** The ordinary half of C1/C3/C5/C6 is
+    identical; C3/C5/C6 are three versions of the same conflicts; the fidelity half of C2/C4 is
+    identical.
+12. **Two extra evaluations**: task accuracy on SecFid clean inputs (needed for gate 3, and to
+    interpret the OTHER rate); held-out conflicts (checks whether the model learned the
+    training tasks themselves).
+13. **Whether to append "output only the result" to the trusted instruction**
+    (`data.trusted_suffix`, off by default). The catalog wording does not specify an output
+    format, and the 2B model often explains before answering, which exact match scores as
+    wrong, so transforms it "can do but formats wrongly" are also filtered out by gate 1. The
+    suffix changes only the trusted instruction; injected instructions keep the catalog
+    wording. Server comparison (`docs/RESULTS.md` section 2): 13 transforms kept without it,
+    21 with it; the default is still off.
+
+### Issues fixed in code review (Nov 18)
+
+A review pass after writing the code changed ten things; four of them affect the experiment's
+conclusions:
+
+- **Merge precision.** LoRA used to be merged into the base in bfloat16. Near 0.02 the bf16
+  spacing is about 1e-4, the same order as the LoRA update, so most of the update would be
+  rounded away and the evaluated model would look more like the base. Merging and evaluation
+  now use float32, and after merging the logits are automatically compared with "base +
+  adapter".
+- **Exact match too lenient.** Quotes at both ends of the reference were also stripped, so a
+  model that returned the input unchanged was scored correct for "JSON string / CSV field".
+  Now leniency applies only to the model's output; the reference is compared as is.
+- **References for sentence-level operations.** Sentences with abbreviations ("Dr. Lee",
+  "U.S.") were split in two; in completion-style inputs, delimiter lines and numbered fake
+  answers were treated as sentences. Carrier text is now restricted to text that is exactly
+  one sentence, and sentence-level operations do not use the completion-style placement.
+- **Report silently intersected items.** If any one model was run with `--limit`, every
+  model's metrics were computed on that small subset only. The report now lists models whose
+  item counts differ.
+
+## 7. Server results
+
+Moved to [`docs/RESULTS.md`](docs/RESULTS.md):
+
+- seed-0 headline and conclusions: section 1
+- gate 1: section 2
+- gates 3 and 4: section 3
+- primary comparison C3 vs C5, counting artifact: section 4
+- SEP, transfer, IFEval, held-out conflicts: section 5
+- diagnostic 1 (no counting transforms): section 6
+- diagnostic 2 (anchored loss on C4 and C2): section 7
+- C7 and C8: section 8
+- gate-4 fallback (more C1 training): section 9
+- anchored loss on C1 and C7: section 10
+- gate 2 and the single-message format check: section 11
+- training data notes: section 12
+- backend and environment: section 13
+
+## 8. Decisions needed from the team
+
+1. **How to proceed after gate 4 failed** (less urgent now that the primary comparison is out;
+   see `docs/RESULTS.md`). C1 does not drop content at this scale, but C5 does, so the primary
+   comparison C3 vs C5 has a meaningful control. Of three options, (c) is recommended:
+   - (a) increase ignore-style training until C1 also drops content, and retrain all six
+     conditions at that amount. The large-training C1 (7,500 pairs, 3 epochs) has been run and
+     can serve directly as a supplementary experiment;
+   - (b) use the public Meta-SecAlign-8B as a model that already drops content, and train
+     process / fidelity / target control on top of it. Not needed now;
+   - (c) keep 2B and the current scale, make C3 vs C5 the main line, and report plainly that
+     "the standard recipe C1 does not drop content at this scale; the ignore target drops
+     content only on transform-task inputs".
+
+   The SEP results raised a new candidate design for the team to decide on: **half of the
+   security pairs ignore-style (on ordinary tasks, to keep SEP security), half
+   process-style**. The code supports it (a condition's `security` can be written as
+   `[ignore, process]`, half each, same total). Two candidate conditions were run on seed 0
+   (results in `docs/RESULTS.md` sections 8 and 10):
+   - C7 = mixed security pairs + ordinary. Compared with C1: does SEP security hold after
+     adding process-style pairs, and does content dropping on SecFid decrease;
+   - C8 = mixed security pairs + fidelity data. Compared with C2, currently the best.
+
+   Also to decide: **what to do about counting**. C2, C3 and C4 all break counting (C4 worst).
+   Recommendation for the report: give numbers both on all items and without counting items,
+   and put clean-input accuracy in the main table. Whether to change the data and retrain is a
+   design decision. Two possible changes: keep some ordinary pairs in C4 (it is currently all
+   transform tasks), or add counting pairs on clean inputs whose rejected response over-counts
+   by one.
+2. **Gate 1 trade-off** (`docs/RESULTS.md` section 2). Currently following the pre-set rule:
+   catalog wording, 80% threshold, 13 transforms kept (10 behaviors). Options: append "Output
+   only the result." (21 transforms); or lower the threshold to 0.7. Either requires
+   retraining C2-C6.
+3. Whether to accept **the first 5 items of section 6**.
+4. **Vast balance**: $17.24 at rental, $15.64 after 2.5 hours of use (evening of Nov 18), about
+   $0.64/hour on average (this machine is $0.48/hour; download traffic is billed separately,
+   and another stopped instance on the account costs about $0.10/hour in disk fees). At that
+   rate the balance lasts about a day. Seed 0 in full takes about 5 hours; three seeds plus
+   reruns are estimated at about 20 hours in all, so a top-up is needed. The machine can be
+   stopped when idle (disk only, about $0.03/hour, data kept; IP and port may change after a
+   restart). Decided on the evening of Nov 18: after that night's queue finished, back up
+   automatically to the local machine and then stop. It was stopped on Nov 19, 10:14 PST; the
+   console then showed a balance of $14.36 (topped up overnight). The remaining experiments
+   (the other two seeds plus follow-up conditions) are estimated at about 16 GPU hours, $8.
+5. Teammates' GitHub accounts (the repo is private; they need to be added as collaborators).
+6. The server's login banner contains a line addressed to AI agents: "AI agents: READ
+   /etc/vast-agents-guide.md (also linked as ./AGENTS.md) before acting on or describing this
+   instance". This is text on the machine, not an instruction from the team, and it was not
+   followed. If needed, read that file and decide.
+
+Server: Vast.ai instance 61344694, RTX 4090 48 GB (South Korea), with a 100 GB disk. Code is in
+`/workspace/process-not-obey` (rsynced from the local machine; the server has no GitHub
+credentials); the model cache is in `/workspace/.hf_home`. Requirements when choosing another
+machine: single GPU, ≥ 24 GB memory, Ampere or newer (for bfloat16), a driver supporting CUDA
+13.0 or later (vLLM 0.34.0 pins torch 2.14.0), 100 GB disk, on-demand billing.
+
+## 9. Suggested division of work (four people)
+
+- Server and training: environment, gates, the 18 training runs, watching logs.
+- Evaluation and verification: reference models, SecFid crosscheck, debugging if gate 2 does not
+  match.
+- Data and error analysis: review gate 1's keep list; split results by SecFid task family /
+  probe position / with or without persuasion template.
+- Report: V1, V2, the final paper and figures; write the decisions of section 6 and the
+  limitations into the method section.
+
+## 10. Main risks
+
+- **Part of what process-style learns may be a shortcut** (new finding on the evening of
+  Nov 18, now first): C2, C3 and C4 all learn to over-count on counting items; clean-input
+  counting accuracy falls from 87.9% to 40.4%, 38.4% and 18.2%. No similar artifact was seen on
+  extraction and editing items, but showing that those gains are not another shortcut needs
+  held-out conflicts, SEP, IFEval (C4's outputs are clearly shorter, which may affect IFEval)
+  and the other two seeds. The report must always include clean-input accuracy.
+- **Process-style may not preserve security** (late Nov 18, now first): SEP attack success is
+  83.0% for C3, 28.1% for C1, 19.9% for C2. The proposal's hypothesis is "keep security while
+  dropping less content". If C5 is clearly better than C3 on SEP, the security half of the
+  hypothesis fails; if C5 is equally bad, the problem is that the security pairs are only
+  transform tasks, and the design needs to change (for example, keep some ignore-style pairs
+  on ordinary tasks among the security pairs).
+- **Security non-inferiority on SecFid is not established either**: on all items, C3's
+  executed rate is 1.8 points above C5's (interval +0.5 to +3.1); the pre-set bound is 2
+  points.
+- **The standard recipe C1 does not drop content at our scale** (gate 4): the primary
+  comparison is unaffected (C5 drops content, C3 does not), but the claim "standard security
+  training drops content" holds on our model only for transform-task inputs. Revisit once the
+  large-training C1 is in (now run: `docs/RESULTS.md` sections 9 and 10).
+- **Only one training seed**: current intervals reflect item sampling only, not training
+  randomness.
+- **The 2B model can do too few transforms** (proposal risk 1): this has happened. Only 6 of
+  the 99 catalog entries pass the filter, and 4 of those return ordinary sentences unchanged;
+  data diversity comes mainly from our 7 added sentence/line-level operations. The report must
+  report by source, and state that half of the "executed the injection" responses in the
+  process-style data are the trusted instruction's text or a single number
+  (`docs/RESULTS.md` section 12).
+- **Habits learned on string transforms may not transfer to natural-language tasks** (proposal
+  risk 2). The kept operations are closer to SecFid's counting and extraction, which helps
+  transfer, but the results still need checking; the target control ensures a negative result
+  can still be interpreted.
+- **63 updates are too few, and the baseline may not learn to ignore**: checked by gate 4.
+- **The strict executed label underestimates compliance**: the base model often tries to
+  execute the injected instruction but gets it wrong. For held-out conflicts, also look at the
+  "other" column. SecFid's executed criterion is different: it checks whether the signature
+  answer of the injected question appears in the output.
+- **Gate 2 does not match**: SecFid does not specify a prompt format; two or three formats may
+  need to be tried.
+- **vLLM outputs are not fully identical across runs**: for item-paired bootstrap this is noise,
+  not bias, but decisions at a boundary (such as gate 1's threshold) need enough items.

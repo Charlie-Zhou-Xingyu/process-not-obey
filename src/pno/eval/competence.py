@@ -12,7 +12,7 @@ EXECUTED / IGNORED / OTHER by exact match. That is the untrained model's goal-go
 behavior at the user-data boundary; [8] reports 19.8% exact for Qwen3.5-9B at the
 system-user boundary.
 
-    python -m pno.eval.competence --model Qwen/Qwen3.5-2B --backend vllm --n 25 --conflict \
+    python -m pno.eval.competence --model Qwen/Qwen3.5-2B --backend vllm --n 100 --conflict \
         --out outputs/competence/qwen3.5-2b
 """
 from __future__ import annotations

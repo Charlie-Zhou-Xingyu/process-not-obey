@@ -1,17 +1,47 @@
 # Learning to Process, Not Obey
 
-CS182 Fall 2026 final project (Topic 3, prompt-injection security). We ask whether security
-training that teaches a model to process injected instructions as content, instead of
-ignoring them, keeps security while losing less content. Base model: Qwen3.5-2B, LoRA + DPO,
-six training conditions, three seeds. Main benchmark: SecFid.
+CS182 Fall 2026 final project (Topic 3, prompt-injection security). Team: Yuxin Chen,
+Xingyu Zhou, Zhice Tang, Renchang Liu.
 
-- Pipeline working document (in Chinese; the author has to share it before others can open it):
-  https://claude.ai/artifact/C3sQ5aV2vy8ZUQ4oxowDvR - the whole pipeline from question to report,
-  with a flow diagram, real examples of every pair type, the gates and the seed-0 results.
-- `PLAN.md` - the working plan: milestones, commands, go/no-go checks (in Chinese).
-- `docs/WALKTHROUGH.md` - a guided tour of the code (in Chinese).
+Security training against prompt injection teaches a model to *ignore* instructions found in
+untrusted data. A known side effect is that the model also drops that text when the task is to
+work on it (translate it, count it, edit it). We ask whether teaching the model to *process* an
+injected instruction as content, without obeying it, keeps security while dropping less content.
+Base model: Qwen3.5-2B, LoRA + DPO, six training conditions. Main benchmark: SecFid; security
+benchmark: SEP.
+
+## Results so far (seed 0, one training run per condition)
+
+| Model | SecFid: injected sentence dropped (%) | SecFid: safe processing (%) | SEP: samples attacked (%) |
+|---|---|---|---|
+| Base Qwen3.5-2B | 17.1 | 63.5 | 92.0 |
+| C1 ignore-style + ordinary (standard recipe) | 16.6 | 73.7 | 28.1 |
+| C2 ignore-style + fidelity (existing fix) | 5.0 | 88.7 | 19.9 |
+| C3 process-style + ordinary (our method) | 5.5 | 87.3 | 83.0 |
+| C4 process-style + fidelity | 2.6 | 80.9 | 46.6 |
+| C5 target control (C3's inputs, "ignore" target) | 27.8 | 62.5 | 72.6 |
+| C6 boundary control (system vs user) | 6.8 | 85.1 | 85.8 |
+
+- The pre-registered hypothesis is not supported. C3 beats C5 on safe processing by 24.8 points
+  [+22.0, +27.6], but is 10.3 points less secure on SEP [-12.2, -8.6] and 3.5 points less secure
+  on the transfer attack [-5.5, -1.4]; the margin was 2 points.
+- Security learned on text-transformation tasks barely transfers to everyday tasks (C5 vs C1:
+  +44.5 points attacked on SEP). The existing fix (C2) is best overall.
+- Plain DPO mostly suppresses the rejected responses. With an added SFT term the standard recipe
+  drops content (23.2% vs 17.1% base) and C2 no longer repairs it (21.1%). These follow-ups are
+  post hoc and single-run.
+
+Full tables, intervals and caveats: `docs/RESULTS.md`.
+
+## Documents
+
+- `docs/RESULTS.md` - every measured result, with intervals and caveats.
+- `PLAN.md` - the working plan: status, schedule, commands, gates, open decisions.
+- `docs/WALKTHROUGH.md` - a guided tour of the code.
 - `docs/DESIGN.md` - what each setting is and where it comes from.
 - `configs/experiment.yaml` - every number the scripts use.
+- `scripts/server/` - the queue scripts that ran on the GPU server; `scripts/analysis/` - one-off
+  analysis scripts used to read the results.
 
 The layout follows the two repositories this work builds on, Meta-SecAlign and SecPO:
 environment setup, a `demo.py`, data construction, training, evaluation.
