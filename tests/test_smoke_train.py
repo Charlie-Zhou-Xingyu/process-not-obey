@@ -11,6 +11,7 @@ import json
 import pytest
 
 from pno.io import load_config, read_jsonl, write_jsonl
+from pno.train import dpo
 
 pytestmark = pytest.mark.slow
 
@@ -95,6 +96,28 @@ def test_train_merge_generate(tiny, cfg_path, workdir, toy_alpaca):
     gen = HFGenerator(str(merged_dir), device="cpu", batch_size=4)
     full = gen.generate_full([prompt, render_prompt(Prompt("Say hi."))], GenConfig(max_new_tokens=8))
     assert len(full) == 2 and all(set(r) == {"text", "truncated"} for r in full)
+
+
+def test_train_with_dpo_plus_sft_loss(tiny, cfg_path, workdir):
+    """The combined loss ([sigmoid, sft] with weights) is accepted by the installed TRL."""
+    import yaml
+
+    train_file = workdir / "train.jsonl"
+    if not train_file.exists():
+        pytest.skip("training smoke test did not run")
+    c = yaml.safe_load(open(cfg_path))
+    c["training"].update(loss_type=["sigmoid", "sft"], loss_weights=[1.0, 1.0])
+    p = workdir / "experiment_sft.yaml"
+    p.write_text(yaml.safe_dump(c))
+    run_dir = workdir / "run_sft"
+    dpo.main(["--train", str(train_file), "--model", tiny, "--out", str(run_dir), "--config", str(p),
+              "--device", "cpu", "--seed", "0", "--max_steps", "2"])
+    log = json.loads((run_dir / "train_log.json").read_text())
+    assert log["training_cfg"]["loss_type"] == ["sigmoid", "sft"]
+    loss = log["train_metrics"]["train_loss"]
+    plain = json.loads((workdir / "run" / "train_log.json").read_text())["log_history"][0]["loss"]
+    first = log["log_history"][0]["loss"]
+    assert loss == loss and first > plain + 0.5          # ln 2 from DPO plus the response's NLL (random model: large)
 
 
 def test_eval_runner_with_adapter(tiny, cfg_path, workdir, toy_alpaca, monkeypatch):

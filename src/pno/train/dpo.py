@@ -45,6 +45,27 @@ def build_hf_dataset(rows: list[dict], renderer: str, tokenizer=None):
     return Dataset.from_list(recs)
 
 
+def loss_spec(cfg: dict) -> tuple[list[str], list[float] | None]:
+    """TRL loss names and weights from the training config.
+
+    ``loss_type`` is one name (``sigmoid`` = DPO, the setting of the study) or a list of names;
+    TRL sums ``weight * batch-mean loss`` over a list. ``[sigmoid, sft]`` adds the per-token
+    negative log-likelihood of the preferred response to the DPO loss, which ties that
+    response down: DPO alone only needs the rejected response to become less likely.
+    """
+    lt = cfg.get("loss_type", "sigmoid")
+    types = [lt] if isinstance(lt, str) else list(lt)
+    if not types:
+        raise ValueError("training.loss_type is empty")
+    weights = cfg.get("loss_weights")
+    if weights is None:
+        return types, None
+    weights = [float(w) for w in weights]
+    if len(weights) != len(types):
+        raise ValueError(f"training.loss_weights has {len(weights)} entries for {len(types)} loss types")
+    return types, weights
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--train", required=True)
@@ -101,12 +122,14 @@ def main(argv=None):
 
     lora = LoraConfig(r=cfg["lora_r"], lora_alpha=cfg["lora_alpha"], lora_dropout=cfg["lora_dropout"],
                       target_modules=cfg["lora_target_modules"], bias="none", task_type="CAUSAL_LM")
+    loss_types, loss_weights = loss_spec(cfg)
     dpo_args = DPOConfig(
         output_dir=args.out,
         seed=args.seed,
         data_seed=args.seed,
         beta=cfg["beta"],
-        loss_type=[cfg.get("loss_type", "sigmoid")],
+        loss_type=loss_types,
+        **({"loss_weights": loss_weights} if loss_weights else {}),
         learning_rate=cfg["learning_rate"],
         lr_scheduler_type=cfg["lr_scheduler_type"],
         **warmup,
