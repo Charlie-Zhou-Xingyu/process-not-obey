@@ -5,6 +5,9 @@ training that teaches a model to process injected instructions as content, inste
 ignoring them, keeps security while losing less content. Base model: Qwen3.5-2B, LoRA + DPO,
 six training conditions, three seeds. Main benchmark: SecFid.
 
+- Pipeline working document (in Chinese; the author has to share it before others can open it):
+  https://claude.ai/artifact/C3sQ5aV2vy8ZUQ4oxowDvR - the whole pipeline from question to report,
+  with a flow diagram, real examples of every pair type, the gates and the seed-0 results.
 - `PLAN.md` - the working plan: milestones, commands, go/no-go checks (in Chinese).
 - `docs/WALKTHROUGH.md` - a guided tour of the code (in Chinese).
 - `docs/DESIGN.md` - what each setting is and where it comes from.
