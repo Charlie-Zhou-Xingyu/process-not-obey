@@ -2,7 +2,7 @@
 # Build the six conditions for every seed. Needs gate 1 (keep.json) first.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-source .venv/bin/activate 2>/dev/null || true
+if [ -f .venv/bin/activate ]; then set +u; source .venv/bin/activate; set -u; fi
 PY=${PNO_PYTHON:-python}; GEN_PY=${PNO_GEN_PYTHON:-python}; BACKEND=${PNO_BACKEND:-vllm}
 read -r BASE MAXTOK TEMP SEED <<<"$($PY -c "
 from pno.io import load_config; c = load_config()

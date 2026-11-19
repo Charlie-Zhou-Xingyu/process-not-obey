@@ -184,7 +184,7 @@ def main(argv=None):
     responses = None
     rpath = _resolve(a.responses) if a.responses else out / "responses.jsonl"
     if rpath.exists():
-        responses = ap_.Responses(read_jsonl(rpath))
+        responses = ap_.Responses(read_jsonl(rpath), cfg["data"].get("keep_truncated_targets", False))
         print(f"[build] {len(responses)}/{responses.n_total} generated replies usable")
     elif not a.allow_missing_generation:
         raise SystemExit(f"missing {rpath}; run the generation step or pass --allow_missing_generation")

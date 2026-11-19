@@ -3,7 +3,8 @@
 The vLLM path cannot be tested on a laptop, and whether vLLM can apply a LoRA adapter to
 Qwen3.5 at run time (the way Meta-SecAlign evaluates its adapters) is not known in advance.
 This script answers both by generating the same 24 short prompts with each setup, each in
-its own process, and comparing the texts:
+its own process, and comparing the texts (with ``--adapter``, 16 of that run's training prompts
+are added, since that is where its outputs should differ from the base model's):
 
     hf_base      transformers, base model                      (reference)
     vllm_base    vLLM, base model                              -> does vLLM agree with transformers?
@@ -39,9 +40,22 @@ PLAIN = ("Name three primary colors.", "Give one tip for learning a new language
          "List two uses of a hammer.", "Explain in one sentence why the sky is blue.")
 
 
-def build_requests() -> list[dict]:
+def training_prompts(adapter: str, n: int = 16) -> list[dict]:
+    """Prompts the adapter was trained on: there its outputs should differ from the base model's,
+    which is what lets us see whether an engine really applied the adapter."""
+    log = Path(adapter) / "train_log.json"
+    if not log.exists():
+        return []
+    train_file = Path(json.loads(log.read_text())["args"]["train"])
+    if not train_file.exists():
+        return []
+    rows = read_jsonl(train_file)[:n]
+    return [{"key": f"train-{i}", "prompt": r["prompt"]} for i, r in enumerate(rows)]
+
+
+def build_requests(adapter: str | None = None) -> list[dict]:
     reg = build_registry()
-    reqs = []
+    reqs = training_prompts(adapter) if adapter else []
     for i, name in enumerate(TRANSFORMS):
         t = reg[name]
         for j in range(3):
@@ -93,7 +107,7 @@ def main(argv=None):
     out_dir = Path(a.out) if Path(a.out).is_absolute() else REPO_ROOT / a.out
     out_dir.mkdir(parents=True, exist_ok=True)
     req_file = out_dir / "requests.jsonl"
-    write_jsonl(req_file, build_requests())
+    write_jsonl(req_file, build_requests(a.adapter))
 
     res: dict[str, dict | None] = {}
     res["hf_base"] = run_setup("hf_base", py, req_file, out_dir, base, "hf", None, None, a.max_new_tokens)
@@ -136,8 +150,8 @@ def main(argv=None):
             notes.append(f"vLLM runs the base model and agrees with transformers on {ref:.0%} of outputs.")
     if a.adapter and not a.skip_vllm and ref is not None:
         if report["hf_adapter_vs_hf_base"] is not None and report["hf_adapter_vs_hf_base"] > 0.9:
-            notes.append("The adapter barely changes these outputs, so the two modes cannot be told apart here; "
-                         "rerun with a run that changed behavior.")
+            notes.append("The adapter barely changes these outputs, so run-time LoRA cannot be verified here; "
+                         "the merged checkpoint is used unless a later check says otherwise.")
         for mode, key in (("lora", "vllm_lora_vs_hf_adapter"), ("merge", "vllm_merged_vs_hf_adapter")):
             v = report[key]
             if v is None:
@@ -147,6 +161,19 @@ def main(argv=None):
             else:
                 notes.append(f"eval.adapter_mode: {mode} disagrees with transformers + adapter ({v:.0%} vs {ref:.0%} "
                              "for the base model): do not use it.")
+    # what `eval.adapter_mode: auto` will use: run-time LoRA if it reproduces transformers + adapter
+    # about as well as vLLM reproduces transformers on the base model, else the merged checkpoint
+    # Run-time LoRA is trusted only if the adapter visibly changes outputs here; otherwise an
+    # engine that silently ignored it would look just as good. The merged checkpoint is checked
+    # against the adapter inside pno.train.merge, so it is the safe choice when in doubt.
+    report["recommended_adapter_mode"] = None
+    if ref is not None and a.adapter:
+        effect, lora, merged = (report[k] for k in ("hf_adapter_vs_hf_base", "vllm_lora_vs_hf_adapter",
+                                                     "vllm_merged_vs_hf_adapter"))
+        if lora is not None and lora >= ref - 0.15 and effect is not None and effect <= 0.9:
+            report["recommended_adapter_mode"] = "lora"
+        elif merged is not None and merged >= ref - 0.15:
+            report["recommended_adapter_mode"] = "merge"
     report["notes"] = notes
     write_json(out_dir / "report.json", report)
     print(json.dumps(report, indent=1, ensure_ascii=False))

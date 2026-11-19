@@ -15,9 +15,11 @@ environment setup, a `demo.py`, data construction, training, evaluation.
 
 # Environment setup
 
-Hardware: one 40-80 GB GPU for training and evaluation (Qwen3.5-2B; the three 8B references
-also fit). A laptop is enough for the unit tests and for building the data that needs no
-model.
+Hardware: one GPU with at least 24 GB of memory, Ampere or newer (bfloat16), 48 GB of RAM
+and 100 GB of disk covers training Qwen3.5-2B and evaluating the three 8B references. The
+NVIDIA driver must support CUDA 13.0 or newer: vLLM 0.34.0 pins torch 2.14.0, whose wheels
+ship the CUDA 13.0 runtime (it also pins transformers below 5.23 and needs Python 3.11+).
+A laptop is enough for the unit tests, the rehearsal and the data that needs no model.
 
 ```bash
 git clone https://github.com/Charlie-Zhou-Xingyu/process-not-obey.git && cd process-not-obey
@@ -33,7 +35,13 @@ pip install -e ".[train,eval,dev]"
 bash scripts/fetch_third_party.sh
 pytest -q -m "not slow"                 # unit tests
 pytest -q tests/test_smoke_train.py     # end to end on a tiny random Qwen3.5 (CPU; needs PNO_QWEN_LOCAL)
+bash scripts/rehearsal.sh               # every server script, start to finish, on the tiny model (~10 min, CPU)
 ```
+
+`scripts/rehearsal.sh` copies the repo to a temporary directory, shrinks every size in the
+config (16 pairs per condition, a dozen items per benchmark) and then runs the real
+`10_gates`, `30_train`, `40_eval` and `50_report` scripts with transformers on CPU. Run it
+after changing code, and once on the server before the real runs.
 
 Model revisions are pinned in `configs/experiment.yaml` (`revisions`), as SecPO pins its
 base model.
@@ -84,11 +92,12 @@ bash scripts/50_report.sh            # outputs/report/report.md: tables, bootstr
   static attacks of Meta-SecAlign and SecPO, a transfer attack built from SecPO's released
   injections, IFEval, and held-out goal-goal conflicts.
 - Trained runs are served the way Meta-SecAlign evaluates its adapters: the base model in
-  vLLM plus the LoRA adapter at run time (`eval.adapter_mode: lora`). If vLLM cannot apply
-  LoRA to Qwen3.5, `PNO_ADAPTER_MODE=merge` evaluates merged float32 checkpoints instead
-  (about 7 GB each; `--cleanup_merged` deletes them once outputs exist).
-  `python -m pno.tools.check_backend --adapter runs/<run>` tells which mode works.
-- `PNO_BACKEND=hf` replaces vLLM by plain transformers (slower). If vLLM's pinned packages
+  vLLM plus the LoRA adapter at run time. If vLLM cannot apply LoRA to Qwen3.5, merged
+  float32 checkpoints are evaluated instead (about 7 GB each; `--cleanup_merged` deletes
+  them once outputs exist). `python -m pno.tools.check_backend --adapter runs/<run>` (part
+  of gate 4) finds out which works, and `eval.adapter_mode: auto` follows its answer;
+  `PNO_ADAPTER_MODE=lora|merge` overrides it.
+- `PNO_BACKEND=hf` replaces vLLM by plain transformers (slower); `PNO_DEVICE=cpu` forces a device. If vLLM's pinned packages
   clash with the training stack, install vLLM in a second venv and point
   `PNO_GEN_PYTHON` at it.
 - Everything is restartable; `python -m pno.pipeline status` shows what exists and

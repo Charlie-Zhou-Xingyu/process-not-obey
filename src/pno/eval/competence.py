@@ -122,12 +122,12 @@ def main(argv=None):
     ap.add_argument("--model", required=True)
     ap.add_argument("--backend", default="vllm", choices=["vllm", "hf"])
     ap.add_argument("--out", required=True)
-    ap.add_argument("--n", type=int, default=25)
-    ap.add_argument("--threshold", type=float, default=0.8)
-    ap.add_argument("--conflict", action="store_true")
+    ap.add_argument("--n", type=int, default=None, help="prompts per transform (default: competence.n)")
+    ap.add_argument("--threshold", type=float, default=None, help="default: competence.threshold")
+    ap.add_argument("--conflict", action="store_true", help="also run conflict prompts (or competence.conflict)")
     ap.add_argument("--only", nargs="*", help="restrict to these transforms (smoke tests)")
     ap.add_argument("--config", default=None)
-    ap.add_argument("--max_new_tokens", type=int, default=384)
+    ap.add_argument("--max_new_tokens", type=int, default=None, help="default: competence.max_new_tokens")
     ap.add_argument("--trusted_suffix", default=None,
                     help='override data.trusted_suffix, e.g. " Output only the result." (pilots)')
     ap.add_argument("--batch_size", type=int, default=16, help="hf backend only")
@@ -136,6 +136,11 @@ def main(argv=None):
 
     cfg = load_config(args.config)
     d = cfg["data"]
+    comp = cfg.get("competence", {})
+    args.n = args.n or comp.get("n", 25)
+    args.threshold = comp.get("threshold", 0.8) if args.threshold is None else args.threshold
+    args.max_new_tokens = args.max_new_tokens or comp.get("max_new_tokens", 384)
+    args.conflict = args.conflict or comp.get("conflict", False)
     suffix = d.get("trusted_suffix", "") if args.trusted_suffix is None else args.trusted_suffix
     reg = build_registry(trusted_suffix=suffix)
     cache = Path(d["alpaca_cache"])

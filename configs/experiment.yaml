@@ -27,8 +27,15 @@ data:
   max_target_chars: 1500
   trusted_suffix: ""               # appended to trusted instructions only; "" = the catalog wording of [8]
   gen_max_new_tokens: 1024         # self-generated targets; replies that hit the limit are dropped
+  keep_truncated_targets: false    # true only in the rehearsal (a random model never stops by itself)
   gen_temperature: 0.8             # as in the label-generation code of [4] and [5] (top_p 1.0, one sample)
   gen_seed: 0
+
+competence:                # gate 1 (pno.eval.competence)
+  n: 25                    # prompts per transform, clean and conflict each
+  threshold: 0.8           # proposal: keep transforms the base model gets right at least 80% of the time
+  max_new_tokens: 384
+  conflict: true           # also record the untrained model's behavior on conflict prompts
 
 conditions:
   C1_ignore_ordinary:   {security: ignore,   benign: ordinary}   # standard recipe (baseline)
@@ -73,7 +80,9 @@ training:                  # settings of [8] (App. C), which match the Qwen runs
 eval:
   backend: vllm
   max_model_len: 8192
-  adapter_mode: lora               # lora: base + run-time adapter, as [4] evaluates; merge: merged checkpoints
+  limit: null                      # first N items per benchmark; set only by the rehearsal
+  adapter_mode: auto               # lora: base + run-time adapter, as [4] evaluates; merge: merged float32
+                                   # checkpoints; auto: whichever the backend check (gate 4) found to work
   dtype_trained: float32           # merge mode only: merged runs keep their LoRA update in float32
   secfid:
     max_new_tokens: 2048           # gold outputs reach ~4.4k characters

@@ -4,5 +4,5 @@
 #   bash scripts/30_train.sh --seeds 1 2
 set -euo pipefail
 cd "$(dirname "$0")/.."
-source .venv/bin/activate 2>/dev/null || true
+if [ -f .venv/bin/activate ]; then set +u; source .venv/bin/activate; set -u; fi
 ${PNO_PYTHON:-python} -m pno.pipeline train "$@"

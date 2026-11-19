@@ -4,7 +4,7 @@
 #   bash scripts/40_eval.sh --models base_qwen35_2b        # only that model
 set -euo pipefail
 cd "$(dirname "$0")/.."
-source .venv/bin/activate 2>/dev/null || true
+if [ -f .venv/bin/activate ]; then set +u; source .venv/bin/activate; set -u; fi
 PY=${PNO_PYTHON:-python}; GEN_PY=${PNO_GEN_PYTHON:-python}; BACKEND=${PNO_BACKEND:-vllm}
 BASE=$($PY -c "from pno.io import load_config; print(load_config()['base_model'])")
 # reference replies used as the fake answer in SEP completion attacks (once, shared by all models)

@@ -205,7 +205,9 @@ In the user message, replace every literal ASCII space with an underscore.
 
 `scripts/` 是薄封装：`00_setup_server`（环境）→ `10_gates`（后端自检 + 四个 gate）→ `20_build_data` → `30_train` → `40_eval` → `50_report`。
 
-`tools/check_backend.py` 是上服务器第一天用的自检：同样的 24 个 prompt 分别用 transformers 和 vLLM 生成并比较，有 adapter 时再比较"运行时 LoRA"和"合并"两种方式，告诉你 `eval.adapter_mode` 该用哪个。
+`scripts/rehearsal.sh` 是彩排：把仓库复制到临时目录，把配置里的规模全部缩小（每个条件 16 对、每个评测十来题），再用微型模型在 CPU 上把上面四个正式脚本从头跑到尾，最后检查每个模型的每个评测都有结果。改完代码或刚到一台新机器时先跑它。
+
+`tools/check_backend.py` 是上服务器第一天用的自检：同样的 24 个 prompt 分别用 transformers 和 vLLM 生成并比较，有 adapter 时再比较"运行时 LoRA"和"合并"两种方式，结论写进 `outputs/check_backend/report.json`，`eval.adapter_mode: auto` 会照着选。
 
 ### 4.9 `tests/`
 

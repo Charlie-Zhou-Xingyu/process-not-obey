@@ -92,6 +92,13 @@ def main(argv=None):
     dtype = torch.bfloat16 if on_cuda else torch.float32
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype, revision=rev).to(device)
 
+    # Warmup as a fraction of the run: older transformers take `warmup_ratio`; newer ones dropped
+    # it and read a float `warmup_steps` in [0, 1) as a ratio. vLLM pins the version on the server.
+    import dataclasses
+
+    has_ratio = any(f.name == "warmup_ratio" for f in dataclasses.fields(DPOConfig))
+    warmup = {"warmup_ratio": cfg["warmup_ratio"]} if has_ratio else {"warmup_steps": cfg["warmup_ratio"]}
+
     lora = LoraConfig(r=cfg["lora_r"], lora_alpha=cfg["lora_alpha"], lora_dropout=cfg["lora_dropout"],
                       target_modules=cfg["lora_target_modules"], bias="none", task_type="CAUSAL_LM")
     dpo_args = DPOConfig(
@@ -102,7 +109,7 @@ def main(argv=None):
         loss_type=[cfg.get("loss_type", "sigmoid")],
         learning_rate=cfg["learning_rate"],
         lr_scheduler_type=cfg["lr_scheduler_type"],
-        warmup_steps=cfg["warmup_ratio"],          # transformers >= 5: a float in [0, 1) is a ratio
+        **warmup,
         max_grad_norm=cfg.get("max_grad_norm", 1.0),
         optim=cfg.get("optim", "adamw_torch"),
         weight_decay=cfg.get("weight_decay", 0.0),
