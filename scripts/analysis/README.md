@@ -13,6 +13,7 @@ holds `outputs/eval` (they import `pno`, except `summarize.py` and `bytask.py`).
 | `pair_diff.py A B [A2 B2 ...]` | paired differences between two runs on every benchmark both have (item bootstrap) |
 | `sep_review.py`, `sep_truncation.py` | SEP per attack, differences between runs, examples; whether outputs cut at the token limit hide attacks |
 | `conflict_matrix.py <models>`, `conflict_by_transform.py`, `conflict_examples.py` | held-out conflict benchmark by trusted transform; example outputs |
+| `count_what.py <models>` | counting on clean inputs: is a wrong answer the number of sentences, or one more than the entities asked for; output shape |
 | `edit_success.py <models>` | editing: was the requested edit applied (items whose edit can be read off the instruction), and is the probe sentence kept verbatim? |
 | `edit_check.py <models>` | editing / translation: word-level similarity of the output to the input and to the references |
 
