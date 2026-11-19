@@ -1,6 +1,6 @@
 # 推进计划：Learning to Process, Not Obey
 
-更新于 2026-11-18 晚（服务器到位当天）。对应 Proposal v4。代码讲解见 `docs/WALKTHROUGH.md`，设置出处见 `docs/DESIGN.md`（英文），所有数字在 `configs/experiment.yaml`。
+更新于 2026-11-19。对应 Proposal v4。整条流程的完整介绍见工作文档《Process-Not-Obey：实验流程工作文档》（https://claude.ai/artifact/C3sQ5aV2vy8ZUQ4oxowDvR ，需要作者先分享才能打开）。代码讲解见 `docs/WALKTHROUGH.md`，设置出处见 `docs/DESIGN.md`（英文），所有数字在 `configs/experiment.yaml`。
 
 ## 0. 一页看懂：我们在做什么实验
 
@@ -510,7 +510,7 @@ proposal 规定 gate 4 不过时先把安全样本翻倍。跑了两档，损失
 
 ### 这种保留清单下，训练数据长什么样
 
-process-style 的 2,000 对里，被拒绝的回答（"执行了注入指令"）有 29% 恰好等于可信指令原文（因为复制、合并行、一句一行这些操作作用在一句话上不改变它），22% 是一个数字（数句子、数行）。这符合 [8] 的构造规则，但意味着"别执行"这一侧的信号比较弱，process-style 条件的安全性主要要靠 SEP 和 transfer attack 来检验。
+process-style 的 2,000 对里，被拒绝的回答（"执行了注入指令"）有 29% 恰好等于可信指令原文（因为复制、合并行、一句一行这些操作作用在一句话上不改变它），19% 是一个数字（数句子、数行；按 seed 0 的正式数据重新数过，之前写的 22% 来自更早的一版数据）。这符合 [8] 的构造规则，但意味着"别执行"这一侧的信号比较弱，process-style 条件的安全性主要要靠 SEP 和 transfer attack 来检验。
 
 ### 后端和环境
 
