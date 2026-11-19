@@ -16,11 +16,12 @@ outputs: in its order each model generated all six benchmarks before the next mo
 (about 25 minutes per model, 15 of them for SEP's 12,000 prompts), so the headline benchmark
 of the last condition would have come 2 hours later.
 
-## Second order (`requeue.sh`, Nov 19 05:12 UTC)
+## Second order (`requeue.sh`, Nov 19 05:12 UTC; `requeue2.sh` at 05:43 inserted `nocount`)
 
 | script | tmux session | what it does | marker |
 |---|---|---|---|
 | `run_seed0b.sh` | `seed0` | SecFid (generate + score) for C3 and C5, then the other runs; gate 2 (Meta-SecAlign-8B and undefended Llama-3.1-8B-Instruct on SecFid); the other benchmarks for the six runs and the base model; report | `.seed0_done` |
+| `run_keep_variant.sh nocount '^count_' C3_process_ordinary C4_process_fidelity` | `nocount` | diagnostic added by `requeue2.sh`: C3 and C4 retrained with the two counting transforms removed from the pool, SecFid only (`nocount_report.sh` prints the comparison) | `.nocount_done` |
 | `run_extras.sh` | `extras` | base model with instruction and data in one user message; then `run_c1_variant.sh sec2x 4000 1 1.25` (the proposal's gate 4 fallback) | `.extras_done` |
 | `run_c1_variant.sh secbig 7500 3 1.2756` | `big` | C1 with 7,500 security pairs and 3 epochs: does content dropping appear with about 11 times the ignore-style training? | `.big_done` |
 | `run_after.sh` | `after` | the three 8B reference models on the remaining benchmarks, anything still missing, report, gate summary; removes `.hold_stop` when it ends | `.after_done` |
@@ -29,7 +30,7 @@ In `run_seed0b.sh` and `run_after.sh` a failing step is reported (`STEP FAILED`)
 one still runs. `.hold_stop` tells the script on the laptop (wait, back up, verify by sha256,
 `vastai stop instance`) that work is still queued.
 
-`run_c1_variant.sh` works in a copy of the repo (`/workspace/pno-<name>`) with its own config,
+`run_c1_variant.sh` and `run_keep_variant.sh` work in a copy of the repo (`/workspace/pno-<name>`) with its own config,
 data, run and outputs, so the main study is untouched. `early_score.sh` scores SecFid outputs
 in a scratch copy (`/workspace/early`) without writing to the study's output directories; it
 was used once to check that the scoring reproduces. The paths are those of that machine.

@@ -8,8 +8,13 @@ cfg = load_config()
 rows = {r["id"]: r for r in secfid.raw_rows(cfg)}
 models = sys.argv[1:]
 def outputs(m, b):
-    p = os.path.join("outputs/eval", m, b + ".jsonl")
+    p = os.path.join(m if os.path.isdir(m) else os.path.join("outputs/eval", m), b + ".jsonl")
     return {json.loads(l)["id"]: json.loads(l)["output"] for l in open(p)} if os.path.exists(p) else None
+def tag(m):
+    """Short label; a run given as a directory is marked with the name of its repo copy."""
+    if not os.path.isdir(m): return m.replace("-seed0", "")
+    parts = os.path.abspath(m).split(os.sep)
+    return (parts[-4].replace("pno-", "") + ":" + parts[-1]).replace("-seed0", "")
 def label(r, resp):
     ev = r["eval"]; refs, norm = ev["references"], ev["normalization"]
     if secfid.reference_matches(resp, refs["processed"], norm): return "processed"
@@ -29,7 +34,7 @@ for task in ("counting", "extraction"):
         n = len(ids); f = lambda d, k: 100 * sum(v == k for v in d.values()) / n
         both = 100 * sum(la[i] == "processed" and lc[i] == "processed" for i in ids) / n
         net = 100 * sum(la[i] == "processed" and lc[i] != "processed" for i in ids) / n
-        print(f"{m:28s}        {f(la,'processed'):5.1f} {f(la,'ignored'):5.1f} {f(la,'other'):5.1f} |      {f(lc,'processed'):5.1f} {f(lc,'ignored'):5.1f} {f(lc,'other'):5.1f} |    {both:5.1f}     |   {net:5.1f}")
+        print(f"{tag(m):28s}        {f(la,'processed'):5.1f} {f(la,'ignored'):5.1f} {f(la,'other'):5.1f} |      {f(lc,'processed'):5.1f} {f(lc,'ignored'):5.1f} {f(lc,'other'):5.1f} |    {both:5.1f}     |   {net:5.1f}")
 # a few clean counting items where the last model is labelled 'processed' without any probe
 m = models[-1]; c = outputs(m, "secfid_clean"); b = outputs(models[0], "secfid_clean")
 shown = 0
