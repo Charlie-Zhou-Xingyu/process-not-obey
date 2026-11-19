@@ -136,3 +136,40 @@ def test_adapter_mode_auto_follows_the_backend_check(tmp_path, monkeypatch):
     monkeypatch.setenv("PNO_ADAPTER_MODE", "bogus")
     with pytest.raises(SystemExit):
         pipeline.adapter_mode(cfg)
+
+
+# ---- found on the server: CUDA-only kernels on CPU ----------------------------------------
+
+def test_cpu_runs_hide_the_cuda_only_qwen_kernels():
+    import importlib
+
+    from pno.gen import backends
+
+    assert backends.pick_device("cpu") == "cpu"
+    for name in backends.GPU_ONLY_KERNELS:
+        with pytest.raises(ImportError):
+            importlib.import_module(name)
+
+
+def test_reference_kernels_refuse_once_the_fast_ones_are_bound(monkeypatch):
+    import sys
+    import types
+
+    from pno.gen import backends
+
+    monkeypatch.setitem(sys.modules, "causal_conv1d", types.ModuleType("causal_conv1d"))
+    monkeypatch.setitem(sys.modules, backends.QWEN35_MODELING, types.ModuleType("modeling"))
+    with pytest.raises(RuntimeError, match="CUDA-only"):
+        backends.use_reference_kernels()
+
+
+def test_cpu_quota_reads_the_cgroup_limit(tmp_path):
+    from pno.gen.backends import cpu_quota
+
+    f = tmp_path / "cpu.max"
+    f.write_text("2633142 100000\n")
+    assert cpu_quota(str(f), visible=192) == 26       # the rented server: 192 visible cores, 26 usable
+    assert cpu_quota(str(f), visible=16) is None      # quota above the visible cores: nothing to cap
+    f.write_text("max 100000\n")
+    assert cpu_quota(str(f), visible=192) is None     # no quota
+    assert cpu_quota(str(tmp_path / "missing"), visible=192) is None

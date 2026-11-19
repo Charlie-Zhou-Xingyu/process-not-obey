@@ -57,12 +57,15 @@ def _quote_lines(t: str) -> str:
     return "\n".join(f"> {ln}" for ln in split_lines(t))
 
 
+_EDGE_PUNCT = ".,!?;:"     # punctuation attached to a word is not part of it ("Therefore," -> "Therefore")
+
+
 def _first_word_each_sentence(t: str) -> str:
-    return " ".join(s.split()[0] for s in split_sentences(t) if s.split())
+    return " ".join(s.split()[0].strip(_EDGE_PUNCT) for s in split_sentences(t) if s.split())
 
 
 def _last_word_each_sentence(t: str) -> str:
-    return " ".join(s.split()[-1].strip(".,!?;:") for s in split_sentences(t) if s.split())
+    return " ".join(s.split()[-1].strip(_EDGE_PUNCT) for s in split_sentences(t) if s.split())
 
 
 def register(reg: Registry) -> None:
@@ -79,7 +82,7 @@ def register(reg: Registry) -> None:
                   _count_sentences, "sentence", "text", "extra"))
     add(Transform("bullet_sentences", "Turn the {target} into a bulleted list with one sentence per bullet, each starting with \"- \".",
                   _bullet_sentences, "sentence", "text", "extra"))
-    add(Transform("first_word_each_sentence", "List the first word of each sentence in the {target}, separated by spaces.",
+    add(Transform("first_word_each_sentence", "List the first word of each sentence in the {target}, without punctuation, separated by spaces.",
                   _first_word_each_sentence, "sentence", "text", "extra"))
     add(Transform("last_word_each_sentence", "List the last word of each sentence in the {target}, without punctuation, separated by spaces.",
                   _last_word_each_sentence, "sentence", "text", "extra"))

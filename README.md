@@ -41,7 +41,15 @@ bash scripts/rehearsal.sh               # every server script, start to finish, 
 `scripts/rehearsal.sh` copies the repo to a temporary directory, shrinks every size in the
 config (16 pairs per condition, a dozen items per benchmark) and then runs the real
 `10_gates`, `30_train`, `40_eval` and `50_report` scripts with transformers on CPU. Run it
-after changing code, and once on the server before the real runs.
+after changing code, and once on the server before the real runs, there as
+`PNO_DEVICE=cuda bash scripts/rehearsal.sh`: the same run on the GPU, with bfloat16,
+gradient checkpointing and the optimized Qwen3.5 kernels that real training uses.
+
+The optimized kernels (`causal-conv1d`, `flash-linear-attention`, installed by
+`00_setup_server.sh`) are CUDA-only, and transformers calls them on every device once they
+are importable. Whenever our code picks a device other than CUDA (and for the merge, which
+runs on CPU) it hides the two packages first, so that transformers uses its own PyTorch
+implementation.
 
 Model revisions are pinned in `configs/experiment.yaml` (`revisions`), as SecPO pins its
 base model.
