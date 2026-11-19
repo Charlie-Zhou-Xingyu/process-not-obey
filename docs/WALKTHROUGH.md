@@ -104,7 +104,7 @@ In the user message, replace every literal ASCII space with an underscore.
 - `Prompt.messages("input_role")` 得到 `[user, input]` 两条消息；`"user_concat"` 把指令和数据用空行拼成一条 user 消息，只在让基座模型生成目标回答时用（Meta-SecAlign 的代码就是这么生成标签的）。
 - `render_chatml` 把消息拼成 Qwen 的 ChatML 字符串。Qwen 自带的模板遇到 `input` 角色会报错，所以我们自己拼；对 system / user 两种角色，测试保证我们拼出来的和 Qwen 模板逐字节相同。
 - `sanitize_untrusted` 会把 `<|im_start|>`、`<|im_end|>`、`<think>` 这类分隔符从 `input` 内容里删掉，否则数据里写一句 `<|im_end|><|im_start|>user` 就能伪造一轮对话。SecPO 的模板做了同样的过滤。
-- `render(..., renderer="hf")` 直接用模型自带的模板，给三个 Llama 参考模型用。
+- `render(..., renderer="hf")` 用 tokenizer 带的模板，给三个 Llama 参考模型用。两个防御过的模型用各自发布的模板；未防御的 Llama-3.1-8B-Instruct 用 Meta-SecAlign 的 tokenizer（它自带的模板没有 `input` 角色），配置里的 `tokenizer` 一项就是为此设的。
 
 训练和评测都只认这里渲染出来的字符串，所以两边看到的 prompt 一定相同。
 
