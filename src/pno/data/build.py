@@ -43,7 +43,7 @@ def _resolve(path: str | None) -> Path | None:
     return p if p.is_absolute() else REPO_ROOT / p
 
 
-def load_keep(path: str | None, reg) -> list[str]:
+def load_keep(path: str | None, reg, required: bool = False) -> list[str]:
     p = _resolve(path)
     if p and p.exists():
         keep = json.loads(p.read_text())["keep"]
@@ -51,6 +51,9 @@ def load_keep(path: str | None, reg) -> list[str]:
         if missing:
             raise KeyError(f"keep.json names unknown transforms: {missing}")
         return keep
+    if required:
+        raise FileNotFoundError(f"no competence keep-list at {path!r}; run gate 1 first "
+                                "(GATES=1 bash scripts/10_gates.sh)")
     print(f"[build] WARNING: no competence keep-list at {path!r}; using every transform that passes the "
           "content-sensitivity check (fine for smoke tests, not for the study)")
     from pno.catalog.base import sensitive_names
@@ -59,11 +62,12 @@ def load_keep(path: str | None, reg) -> list[str]:
 
 
 class Builder:
-    def __init__(self, cfg: dict, keep_path: str | None = None, rows=None, delm_tokens: dict | None = None):
+    def __init__(self, cfg: dict, keep_path: str | None = None, rows=None, delm_tokens: dict | None = None,
+                 require_keep: bool = False):
         self.cfg = cfg
         d = self.d = cfg["data"]
         self.reg = build_registry(trusted_suffix=d.get("trusted_suffix", ""))
-        self.keep = load_keep(keep_path or d.get("keep_file"), self.reg)
+        self.keep = load_keep(keep_path or d.get("keep_file"), self.reg, required=require_keep)
         self.inj_pool = self.keep if d.get("injected_from", "keep") == "keep" else self.reg.names()
         self.rows = rows if rows is not None else load_alpaca(_resolve(d.get("alpaca_cache")))
         self.pools = make_pools(self.rows, d["pool_seed"])
@@ -181,7 +185,7 @@ def main(argv=None):
 
     cfg = load_config(a.config)
     seeds = a.seeds if a.seeds is not None else cfg["seeds"]
-    b = Builder(cfg, a.keep)
+    b = Builder(cfg, a.keep, require_keep=a.stage != "preview")
     out = _resolve(a.out)
     print(f"[build] {len(b.keep)} transforms in the pool, {len(b.sentences)} carrier sentences, "
           f"{len(b.fid_sentences)} instruction-like content sentences")
@@ -209,6 +213,13 @@ def main(argv=None):
         raise SystemExit(f"missing {rpath}; run the generation step or pass --allow_missing_generation")
 
     manifest = {"config": cfg, "keep": b.keep, "seeds": {}}
+    prev_path = out / "manifest.json"
+    if prev_path.exists():   # keep the record of seeds not rebuilt now, if they came from the same setup
+        prev = json.loads(prev_path.read_text())
+        if prev.get("config") == cfg and prev.get("keep") == b.keep:
+            manifest["seeds"] = {k: v for k, v in prev.get("seeds", {}).items() if int(k) not in seeds}
+        else:
+            print(f"[build] {prev_path} was written under another config or keep-list; replacing it")
     for s in seeds:
         comp = b.components(s, responses)
         sd = out / f"seed{s}"

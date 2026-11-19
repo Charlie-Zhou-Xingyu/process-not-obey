@@ -18,6 +18,7 @@ Example::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import time
@@ -159,6 +160,7 @@ def main(argv=None):
     tok.save_pretrained(str(out))
     write_json(out / "train_log.json", {
         "args": vars(args), "training_cfg": cfg, "base_revision": rev, "max_steps": max_steps,
+        "train_sha256": hashlib.sha256(Path(args.train).read_bytes()).hexdigest(),
         "effective_batch": eff,
         "n_rows": len(rows), "n_after_prepare": len(trainer.train_dataset), "seconds": elapsed,
         "train_metrics": result.metrics, "log_history": trainer.state.log_history,

@@ -1,7 +1,7 @@
 """SecFid counting and extraction: is a 'processed' label on attacked inputs explained by a general
 tendency to give the larger answer? Compare each model's labels on the attacked input and on
 the clean input of the same item (the clean input has no probe, so 'processed' there is an error)."""
-import json, sys, os, re, collections
+import json, sys, os
 from pno.eval import secfid
 from pno.io import load_config
 cfg = load_config()

@@ -44,8 +44,15 @@ def write_json(path: str | os.PathLike, obj: Any) -> None:
         json.dump(obj, f, ensure_ascii=False, indent=2)
 
 
+CONFIG_ENV = "PNO_CONFIG"
+
+
 def load_config(path: str | os.PathLike | None = None) -> dict:
-    path = Path(path) if path else REPO_ROOT / "configs" / "experiment.yaml"
+    """The experiment config: ``path`` if given, else ``$PNO_CONFIG``, else configs/experiment.yaml.
+
+    ``pno.pipeline --config X`` sets ``PNO_CONFIG`` so that every step it launches (training,
+    generation, scoring) reads the same file."""
+    path = Path(path) if path else Path(os.environ.get(CONFIG_ENV) or REPO_ROOT / "configs" / "experiment.yaml")
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 

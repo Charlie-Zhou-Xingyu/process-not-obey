@@ -57,6 +57,7 @@ A laptop is enough for the unit tests, the rehearsal and the data that needs no 
 ```bash
 git clone https://github.com/Charlie-Zhou-Xingyu/process-not-obey.git && cd process-not-obey
 bash scripts/00_setup_server.sh     # venv, vLLM + TRL + PEFT, pinned third-party repos, unit tests
+# exact versions behind the seed-0 results: requirements-server.txt
 hf auth login                       # access to meta-llama/Llama-3.1-8B-Instruct and google/embeddinggemma-300m
 ```
 
@@ -133,16 +134,22 @@ bash scripts/50_report.sh            # outputs/report/report.md: tables, bootstr
   static attacks of Meta-SecAlign and SecPO, a transfer attack built from SecPO's released
   injections, IFEval, and held-out goal-goal conflicts.
 - Trained runs are served the way Meta-SecAlign evaluates its adapters: the base model in
-  vLLM plus the LoRA adapter at run time. If vLLM cannot apply LoRA to Qwen3.5, merged
-  float32 checkpoints are evaluated instead (about 7 GB each; `--cleanup_merged` deletes
-  them once outputs exist). `python -m pno.tools.check_backend --adapter runs/<run>` (part
+  vLLM plus the LoRA adapter at run time; this is what produced all seed-0 results. The
+  alternative, merged float32 checkpoints (about 7 GB each; `--cleanup_merged` deletes them
+  once outputs exist), failed to start in vLLM 0.34.0 on our server and is untested there. `python -m pno.tools.check_backend --adapter runs/<run>` (part
   of gate 4) finds out which works, and `eval.adapter_mode: auto` follows its answer;
   `PNO_ADAPTER_MODE=lora|merge` overrides it.
 - `PNO_BACKEND=hf` replaces vLLM by plain transformers (slower); `PNO_DEVICE=cpu` forces a device. If vLLM's pinned packages
   clash with the training stack, install vLLM in a second venv and point
   `PNO_GEN_PYTHON` at it.
 - Everything is restartable; `python -m pno.pipeline status` shows what exists and
-  `--dry_run` prints commands without running them.
+  `--dry_run` prints commands without running them. A finished run is reused only if its
+  recorded training settings and training data match the current ones; otherwise the
+  pipeline stops and asks you to move the old run (and its outputs) away. Outputs newer than
+  their scores are re-scored.
+- `--config <file>` (or `PNO_CONFIG=<file>`) selects another config for every step the
+  pipeline launches. Use a separate copy of the repo, or move `runs/` and `outputs/eval/`
+  aside, for a variant whose runs share names with the main study.
 
 # Layout
 
