@@ -173,3 +173,19 @@ def test_cpu_quota_reads_the_cgroup_limit(tmp_path):
     f.write_text("max 100000\n")
     assert cpu_quota(str(f), visible=192) is None     # no quota
     assert cpu_quota(str(tmp_path / "missing"), visible=192) is None
+
+
+def test_loss_spec_accepts_one_loss_or_a_weighted_list():
+    import pytest
+
+    from pno.train.dpo import loss_spec
+
+    assert loss_spec({}) == (["sigmoid"], None)
+    assert loss_spec({"loss_type": "sigmoid"}) == (["sigmoid"], None)
+    assert loss_spec({"loss_type": ["sigmoid", "sft"]}) == (["sigmoid", "sft"], None)       # TRL: weights of 1
+    assert loss_spec({"loss_type": ["sigmoid", "sft"], "loss_weights": [1, 0.5]}) == (["sigmoid", "sft"], [1.0, 0.5])
+    with pytest.raises(ValueError):
+        loss_spec({"loss_type": ["sigmoid", "sft"], "loss_weights": [1.0]})
+    with pytest.raises(ValueError):
+        loss_spec({"loss_type": []})
+

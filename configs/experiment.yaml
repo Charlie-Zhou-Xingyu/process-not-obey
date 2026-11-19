@@ -67,7 +67,8 @@ training:                  # settings of [8] (App. C), which match the Qwen runs
   optim: adamw_torch               # [8] "PyTorch AdamW"; [5] Qwen config
   weight_decay: 0.0
   beta: 0.1
-  loss_type: sigmoid
+  loss_type: sigmoid               # DPO. A list combines TRL losses, e.g. [sigmoid, sft] with
+                                   # loss_weights: [1.0, 1.0] adds the preferred response's per-token NLL
   max_length: 2048
   lora_r: 64
   lora_alpha: 8                    # [8] "scaling coefficient 8"; [4]/[5] use r=64, alpha=8
