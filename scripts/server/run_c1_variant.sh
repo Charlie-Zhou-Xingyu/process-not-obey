@@ -4,6 +4,14 @@
 #   run_c1_variant.sh <name> <security_pairs> <epochs> <oversample>
 #   PREPARE_ONLY=1 run_c1_variant.sh ...     # stop after listing the generation requests (no GPU)
 set -euo pipefail
+# One retry after five minutes if anything fails (network drops on the server; every step
+# below skips what is already done).
+if [ -z "${PNO_ATTEMPT:-}" ]; then
+  PNO_ATTEMPT=1 bash "$0" "$@" && exit 0
+  echo; echo "=================== $(date -u +%H:%M:%S) [$1] first attempt failed; retrying in 5 minutes ==================="
+  sleep 300
+  PNO_ATTEMPT=2 bash "$0" "$@"; exit $?
+fi
 NAME=$1; SEC=$2; EPOCHS=$3; OVER=$4
 MAIN=/workspace/process-not-obey
 VAR=/workspace/pno-$NAME

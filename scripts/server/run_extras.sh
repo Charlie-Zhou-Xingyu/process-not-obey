@@ -12,7 +12,13 @@ cd /workspace/process-not-obey
 set +u; source .venv/bin/activate; set -u
 step() { echo; echo "=================== $(date -u +%H:%M:%S) $* ==================="; }
 fail=0
-run() { "$@" || { echo "STEP FAILED (exit $?): $*"; fail=1; }; }
+# A failing step is tried once more after five minutes (the server's network dropped twice on
+# Nov 18 for a few minutes; every step skips what is already done), then reported.
+run() {
+  "$@" && return 0
+  echo "STEP FAILED (exit $?), retrying in 5 minutes: $*"; sleep 300
+  "$@" || { echo "STEP FAILED again (exit $?): $*"; fail=1; }
+}
 step "base model, single user message"
 run python -m pno.eval.run --name base_qwen35_2b_concat --renderer chatml --placement user_concat \
     --model Qwen/Qwen3.5-2B --backend vllm --benchmarks secfid secfid_clean
