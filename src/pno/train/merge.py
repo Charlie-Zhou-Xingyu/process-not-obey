@@ -71,6 +71,10 @@ def export_merged(base: str, adapter: str, out: str, verify: bool = True) -> dic
     from safetensors.torch import save_file
     from transformers import AutoModelForCausalLM
 
+    from pno.gen.backends import limit_torch_threads, use_reference_kernels
+
+    use_reference_kernels()      # the merge and its check run on CPU
+    limit_torch_threads()
     base_dir = resolve_local(base)
     out_dir = Path(out)
     out_dir.mkdir(parents=True, exist_ok=True)

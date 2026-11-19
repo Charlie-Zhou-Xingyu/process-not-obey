@@ -5,6 +5,8 @@
 # changing code and once on the server before spending GPU time.
 #
 #   bash scripts/rehearsal.sh [workdir]        # default: a new temporary directory
+#   PNO_DEVICE=cuda bash scripts/rehearsal.sh  # on the server: same run on the GPU, with bf16, gradient
+#                                              # checkpointing and the optimized Qwen3.5 kernels of real training
 #   REHEARSAL_BENCHMARKS="secfid sep conflict" bash scripts/rehearsal.sh    # e.g. offline, without IFEval
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,7 +22,7 @@ rm -rf "$WORK" && mkdir -p "$WORK"
 rsync -a --exclude /.git --exclude /.venv --exclude /third_party --exclude /outputs --exclude /runs \
       --exclude /merged --exclude /data --exclude '__pycache__' --exclude '*.egg-info' ./ "$WORK"/
 export PNO_THIRD_PARTY=$ROOT/third_party PYTHONPATH=$WORK/src PNO_PYTHON=$PYBIN PNO_GEN_PYTHON=$PYBIN
-export PNO_BACKEND=hf PNO_DEVICE=cpu TOKENIZERS_PARALLELISM=false
+export PNO_BACKEND=hf PNO_DEVICE=${PNO_DEVICE:-cpu} TOKENIZERS_PARALLELISM=false
 cd "$WORK"
 "$PYBIN" scripts/make_rehearsal.py "$WORK" "$QWEN"
 if [ -n "${REHEARSAL_BENCHMARKS:-}" ]; then
@@ -41,7 +43,7 @@ rm -f outputs/eval/C2_ignore_fidelity-seed0/conflict*
 PNO_ADAPTER_MODE=merge "$PYBIN" -m pno.pipeline eval --seeds 0 --conditions C2_ignore_fidelity --models \
     --benchmarks conflict --cleanup_merged
 step "demo";  "$PYBIN" demo.py --model "$WORK/rehearsal_models/tiny-qwen" --adapter runs/C3_process_ordinary-seed0 \
-    --device cpu --max_new_tokens 6 | tail -4
+    --device "$PNO_DEVICE" --max_new_tokens 6 | tail -4
 step "checks"
 "$PYBIN" - <<'PY'
 import json

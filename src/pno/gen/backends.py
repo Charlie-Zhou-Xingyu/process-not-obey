@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,17 +28,70 @@ class GenConfig:
     seed: int = 0
 
 
-def pick_device(preferred: str | None = None) -> str:
+GPU_ONLY_KERNELS = ("causal_conv1d", "fla")     # import names of causal-conv1d and flash-linear-attention
+QWEN35_MODELING = "transformers.models.qwen3_5.modeling_qwen3_5"
+
+
+def use_reference_kernels() -> None:
+    """Make transformers run Qwen3.5's Gated DeltaNet layers with its own PyTorch code.
+
+    transformers binds the ``causal-conv1d`` and ``flash-linear-attention`` kernels when it
+    imports the Qwen3.5 model code, if those packages are importable (``00_setup_server.sh``
+    installs them for training speed), and then calls them on every device. The causal-conv1d
+    kernel is CUDA-only ("Expected x.is_cuda() to be true"). Hiding both packages before the
+    model code is imported selects the reference implementation, which runs anywhere.
+    """
+    bound = [n for n in GPU_ONLY_KERNELS if sys.modules.get(n) is not None]
+    if bound and QWEN35_MODELING in sys.modules:
+        raise RuntimeError(
+            f"the Qwen3.5 model code was already imported with the CUDA-only kernels {bound}; "
+            "choose the device (PNO_DEVICE=cpu) before any model is loaded in this process")
+    for name in GPU_ONLY_KERNELS:
+        sys.modules[name] = None      # a later ``import name`` raises ImportError
+
+
+def cpu_quota(path: str = "/sys/fs/cgroup/cpu.max", visible: int | None = None) -> int | None:
+    """Cores this container may use (cgroup v2), if that is fewer than the cores it can see."""
+    try:
+        quota, period = Path(path).read_text().split()[:2]
+        n = max(1, int(quota) // int(period))      # "max" (no quota) raises ValueError
+    except (OSError, ValueError):
+        return None
+    visible = visible or os.cpu_count() or n
+    return n if n < visible else None
+
+
+def limit_torch_threads() -> None:
+    """Keep torch's CPU thread pool within the container's CPU quota.
+
+    A rented container often sees every core of its host (192 on our server) while its quota
+    is about 26. torch sizes its pool by the visible cores, the kernel throttles the process,
+    and CPU work ran up to 10x slower there. Only our own transformers processes need this:
+    vLLM sets the thread count of its engine itself, as long as OMP_NUM_THREADS is unset.
+    """
     import torch
 
-    preferred = preferred or os.environ.get("PNO_DEVICE")      # e.g. PNO_DEVICE=cpu for the rehearsal
-    if preferred:
-        return preferred
-    if torch.cuda.is_available():
-        return "cuda"
-    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
+    n = cpu_quota()
+    if n and n < torch.get_num_threads():
+        torch.set_num_threads(n)
+
+
+def pick_device(preferred: str | None = None) -> str:
+    """The device for a model run with transformers; also prepares the process for it."""
+    import torch
+
+    device = preferred or os.environ.get("PNO_DEVICE")      # e.g. PNO_DEVICE=cpu for the rehearsal
+    if not device:
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
+    if not device.startswith("cuda"):
+        use_reference_kernels()
+    limit_torch_threads()
+    return device
 
 
 class HFGenerator:
@@ -68,6 +122,9 @@ class HFGenerator:
         import torch
 
         torch.manual_seed(cfg.seed)
+        # Stop on the tokenizer's end token as well as the model config's, as vLLM does. For
+        # Qwen3.5 the config names <|endoftext|> and the tokenizer <|im_end|>; without this,
+        # generation runs past the end of the turn ("<|im_end|>\n<|endoftext|>").
         eos = self.model.generation_config.eos_token_id
         eos_ids = set(eos if isinstance(eos, (list, tuple)) else [eos]) | {self.tok.eos_token_id}
         eos_ids.discard(None)
@@ -78,7 +135,8 @@ class HFGenerator:
             idx = order[b * self.batch_size:(b + 1) * self.batch_size]
             enc = self.tok([prompts[i] for i in idx], return_tensors="pt", padding=True,
                            add_special_tokens=False).to(self.device)
-            kwargs = dict(max_new_tokens=cfg.max_new_tokens, pad_token_id=self.tok.pad_token_id)
+            kwargs = dict(max_new_tokens=cfg.max_new_tokens, pad_token_id=self.tok.pad_token_id,
+                          eos_token_id=sorted(eos_ids))
             if cfg.temperature > 0:
                 kwargs.update(do_sample=True, temperature=cfg.temperature, top_p=cfg.top_p)
             else:

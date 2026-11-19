@@ -32,7 +32,9 @@ data:
   gen_seed: 0
 
 competence:                # gate 1 (pno.eval.competence)
-  n: 25                    # prompts per transform, clean and conflict each
+  n: 100                   # prompts per transform, clean and conflict each. With 25, transforms near the
+                           # threshold moved in and out of the kept set between two identical runs
+                           # (vLLM's greedy outputs are not bit-identical across runs)
   threshold: 0.8           # proposal: keep transforms the base model gets right at least 80% of the time
   max_new_tokens: 384
   conflict: true           # also record the untrained model's behavior on conflict prompts

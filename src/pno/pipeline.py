@@ -109,10 +109,10 @@ def train(cfg: dict, seeds: list[int], conds: list[str], dry: bool) -> None:
 
 def evaluate_one(cfg: dict, name: str, model: str, renderer: str, benches: list[str], dry: bool,
                  tokenizer: str | None = None, limit: int | None = None, dtype: str | None = None,
-                 adapter: str | None = None) -> None:
+                 adapter: str | None = None, score: bool = True) -> None:
     out = eval_dir(name)
     todo_gen = [b for b in benches if not (out / f"{b}.jsonl").exists()]
-    todo_score = [b for b in benches if not (out / f"{b}_summary.json").exists()]
+    todo_score = [b for b in benches if not (out / f"{b}_summary.json").exists()] if score else []
     common = ["--name", name, "--renderer", renderer] + (["--limit", limit] if limit else [])
     if todo_gen:
         cmd = [GEN_PY, "-m", "pno.eval.run", *common, "--model", model, "--backend", backend(cfg),
@@ -133,7 +133,7 @@ def has_weights(d: Path) -> bool:
 
 
 def evaluate(cfg: dict, seeds: list[int], conds: list[str], models: list[str], benches: list[str] | None,
-             dry: bool, limit: int | None, cleanup_merged: bool = False) -> None:
+             dry: bool, limit: int | None, cleanup_merged: bool = False, score: bool = True) -> None:
     mode = adapter_mode(cfg)
     for seed in seeds:
         for cond in conds:
@@ -146,11 +146,12 @@ def evaluate(cfg: dict, seeds: list[int], conds: list[str], models: list[str], b
                 continue
             if mode == "lora":
                 evaluate_one(cfg, name, cfg["base_model"], cfg["renderer"], b, dry, limit=limit,
-                             adapter=str(p["run"]))
+                             adapter=str(p["run"]), score=score)
                 continue
             if need_gen and not has_weights(p["merged"]):
                 sh(merge_cmd(cfg, p), dry)            # first use, or the weights were cleaned up earlier
-            evaluate_one(cfg, name, str(p["merged"]), cfg["renderer"], b, dry, limit=limit, dtype=trained_dtype(cfg))
+            evaluate_one(cfg, name, str(p["merged"]), cfg["renderer"], b, dry, limit=limit, dtype=trained_dtype(cfg),
+                         score=score)
             if cleanup_merged and not dry and all((eval_dir(name) / f"{x}.jsonl").exists() for x in b):
                 for f in p["merged"].glob("*.safetensors"):
                     f.unlink()                        # about 7 GB per run; the adapter in runs/ is kept
@@ -158,7 +159,7 @@ def evaluate(cfg: dict, seeds: list[int], conds: list[str], models: list[str], b
         spec = cfg["models"][m]
         b = [x for x in benchmarks_for(cfg, None, benches) if not (x == "conflict" and spec["renderer"] != "chatml")]
         dtype = trained_dtype(cfg) if spec.get("dtype") == "trained" else spec.get("dtype")
-        evaluate_one(cfg, m, spec["path"], spec["renderer"], b, dry, spec.get("tokenizer"), limit, dtype)
+        evaluate_one(cfg, m, spec["path"], spec["renderer"], b, dry, spec.get("tokenizer"), limit, dtype, score=score)
 
 
 # ---------------------------------------------------------------- status and gates
@@ -251,6 +252,9 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, default=None, help="eval: first N items per benchmark (smoke tests)")
     ap.add_argument("--cleanup_merged", action="store_true",
                     help="eval: delete a run's merged weights once all its outputs exist (adapters are kept)")
+    ap.add_argument("--no_score", action="store_true",
+                    help="eval: generate outputs only. A later run without this flag scores them; use it while a "
+                         "scorer is unavailable (SecFid needs the gated EmbeddingGemma)")
     ap.add_argument("--dry_run", action="store_true")
     a = ap.parse_args(argv)
     cfg = load_config(a.config)
@@ -263,7 +267,7 @@ def main(argv=None):
             seeds, conds = [], []            # only the named untrained models
         models = a.models if a.models is not None else list(cfg["models"])
         limit = a.limit if a.limit is not None else cfg["eval"].get("limit")   # null in the real config
-        evaluate(cfg, seeds, conds, models, a.benchmarks, a.dry_run, limit, a.cleanup_merged)
+        evaluate(cfg, seeds, conds, models, a.benchmarks, a.dry_run, limit, a.cleanup_merged, score=not a.no_score)
     elif a.stage == "status":
         status(cfg)
     else:

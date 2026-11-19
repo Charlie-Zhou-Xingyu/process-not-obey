@@ -8,6 +8,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from pno.gen.backends import use_reference_kernels  # noqa: E402
+
+use_reference_kernels()      # tests run on CPU, also on a server that has the CUDA-only kernels installed
+
 
 def _find_qwen_snapshot() -> str | None:
     """A local Qwen3.5 snapshot (tokenizer + config), if one is cached on this machine."""
