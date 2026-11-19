@@ -58,7 +58,7 @@ def eval_dir(name: str) -> Path:
 
 
 def benchmarks_for(cfg: dict, seed: int | None, requested: list[str] | None) -> list[str]:
-    benches = list(requested or ALL_BENCH)
+    benches = list(requested or cfg["eval"].get("benchmarks") or ALL_BENCH)
     if seed is not None and seed not in cfg["eval"]["transfer"].get("seeds", cfg["seeds"]):
         benches = [b for b in benches if b != "transfer"]     # proposal: transfer attack on one seed
     return benches
@@ -72,10 +72,17 @@ def adapter_mode(cfg: dict) -> str:
       adapters with vLLM (``enable_lora`` / ``LoRARequest``). No extra checkpoints.
     * ``merge`` - a merged float32 copy of the base checkpoint (``pno.train.merge``), for
       engines that cannot apply LoRA to this architecture.
+    * ``auto``  - whichever of the two the backend check found to reproduce transformers.
     """
-    mode = os.environ.get("PNO_ADAPTER_MODE", cfg["eval"].get("adapter_mode", "lora"))
+    mode = os.environ.get("PNO_ADAPTER_MODE", cfg["eval"].get("adapter_mode", "auto"))
+    if mode == "auto":
+        # transformers applies adapters natively; for vLLM use what the backend check found to work
+        # (python -m pno.tools.check_backend --adapter <run>, run by scripts/10_gates.sh in gate 4)
+        report = REPO_ROOT / "outputs/check_backend/report.json"
+        found = json.loads(report.read_text()).get("recommended_adapter_mode") if report.exists() else None
+        return "lora" if backend(cfg) == "hf" else (found or "lora")
     if mode not in ("lora", "merge"):
-        raise SystemExit(f"eval.adapter_mode must be 'lora' or 'merge', got {mode!r}")
+        raise SystemExit(f"eval.adapter_mode must be 'auto', 'lora' or 'merge', got {mode!r}")
     return mode
 
 
@@ -187,12 +194,12 @@ def gates(cfg: dict) -> None:
     from pno.eval.secfid import PUBLISHED, compare_to_published
 
     pct = lambda x: f"{100 * x:.1f}"  # noqa: E731
-    print("Gate 1 - competence filter (clean accuracy >= 0.8 and content-sensitive)")
+    print("Gate 1 - competence filter (clean accuracy at or above the threshold, and content-sensitive)")
     keep = REPO_ROOT / cfg["data"]["keep_file"]
     if keep.exists():
         k = json.loads(keep.read_text())
-        print(f"  kept {k['n_keep']}/{k['n_total']}: {len(k['keep_goalgoal'])} from the catalog of [8], "
-              f"{len(k['keep_extra'])} sentence/line operations")
+        print(f"  threshold {k['threshold']}, {k['n']} prompts per transform: kept {k['n_keep']}/{k['n_total']} "
+              f"({len(k['keep_goalgoal'])} from the catalog of [8], {len(k['keep_extra'])} sentence/line operations)")
         print("  decision: proceed if the kept set covers >= 8 distinct behaviors; otherwise lower the threshold "
               "or add operations (proposal, risk 1)")
     else:
@@ -255,7 +262,8 @@ def main(argv=None):
         if a.models is not None and a.seeds is None and a.conditions is None:
             seeds, conds = [], []            # only the named untrained models
         models = a.models if a.models is not None else list(cfg["models"])
-        evaluate(cfg, seeds, conds, models, a.benchmarks, a.dry_run, a.limit, a.cleanup_merged)
+        limit = a.limit if a.limit is not None else cfg["eval"].get("limit")   # null in the real config
+        evaluate(cfg, seeds, conds, models, a.benchmarks, a.dry_run, limit, a.cleanup_merged)
     elif a.stage == "status":
         status(cfg)
     else:

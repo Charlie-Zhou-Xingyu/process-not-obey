@@ -117,7 +117,9 @@ Gated DeltaNet layers between them are adapted through their MLPs only under thi
 list. Sixty-three updates is fewer than the 150 of [8] (9,544 pairs) but more than nothing to
 check: gate 4 tests whether the baseline changes behavior at this scale.
 
-Software checked locally: torch 2.15.0, transformers 5.23.0, trl 1.18.1, peft 0.21.3.
+Software checked locally (unit tests and the full rehearsal, on CPU): torch 2.15.0 with
+transformers 5.23.0, and torch 2.14.0 with transformers 5.22.2, the versions vLLM 0.34.0 pins on
+the server; trl 1.18.1 and peft 0.21.3 in both.
 TRL receives prompts as plain strings and appends `<|im_end|>` to both responses.
 
 Serving trained runs. By default a trained run is evaluated as Meta-SecAlign evaluates its

@@ -109,3 +109,30 @@ def test_secfid_clean_counts_either_label_on_embedding_items():
 
     per = secfid_clean.score(items, outs, embedder=bow)
     assert [p["correct"] for p in per] == [1.0, 0.0, 0.0]      # counting needs the clean count (3), not 4
+
+
+def test_adapter_mode_auto_follows_the_backend_check(tmp_path, monkeypatch):
+    import json
+
+    from pno import pipeline
+
+    cfg = copy.deepcopy(load_config())
+    cfg["eval"]["adapter_mode"] = "auto"
+    monkeypatch.setattr(pipeline, "REPO_ROOT", tmp_path)
+    monkeypatch.delenv("PNO_ADAPTER_MODE", raising=False)
+    monkeypatch.setenv("PNO_BACKEND", "vllm")
+    assert pipeline.adapter_mode(cfg) == "lora"                      # no report yet
+    rep = tmp_path / "outputs/check_backend/report.json"
+    rep.parent.mkdir(parents=True)
+    rep.write_text(json.dumps({"recommended_adapter_mode": "merge"}))
+    assert pipeline.adapter_mode(cfg) == "merge" and pipeline.trained_dtype(cfg) == "float32"
+    rep.write_text(json.dumps({"recommended_adapter_mode": "lora"}))
+    assert pipeline.adapter_mode(cfg) == "lora" and pipeline.trained_dtype(cfg) is None
+    monkeypatch.setenv("PNO_BACKEND", "hf")                          # transformers applies adapters natively
+    rep.write_text(json.dumps({"recommended_adapter_mode": "merge"}))
+    assert pipeline.adapter_mode(cfg) == "lora"
+    monkeypatch.setenv("PNO_ADAPTER_MODE", "merge")                  # explicit override wins
+    assert pipeline.adapter_mode(cfg) == "merge"
+    monkeypatch.setenv("PNO_ADAPTER_MODE", "bogus")
+    with pytest.raises(SystemExit):
+        pipeline.adapter_mode(cfg)

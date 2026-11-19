@@ -92,9 +92,9 @@ def requests_for(prompts: list[Prompt]) -> list[dict]:
 class Responses:
     """Generated replies keyed by prompt hash; truncated or empty replies are unusable."""
 
-    def __init__(self, rows: list[dict]):
+    def __init__(self, rows: list[dict], keep_truncated: bool = False):
         self._ok = {r["key"]: r["response"].strip() for r in rows
-                    if not r.get("truncated") and r["response"].strip()}
+                    if (keep_truncated or not r.get("truncated")) and r["response"].strip()}
         self.n_total = len(rows)
 
     def get(self, p: Prompt) -> str | None:

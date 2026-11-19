@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,6 +30,7 @@ class GenConfig:
 def pick_device(preferred: str | None = None) -> str:
     import torch
 
+    preferred = preferred or os.environ.get("PNO_DEVICE")      # e.g. PNO_DEVICE=cpu for the rehearsal
     if preferred:
         return preferred
     if torch.cuda.is_available():
