@@ -33,6 +33,14 @@ benchmark: SEP.
 
 Full tables, intervals and caveats: `docs/RESULTS.md`.
 
+## Checkpoints
+
+The trained LoRA adapters are attached to GitHub releases, not committed:
+[`checkpoints-seed0`](https://github.com/Charlie-Zhou-Xingyu/process-not-obey/releases/tag/checkpoints-seed0)
+holds the six study conditions and the ten follow-up runs of seed 0, one archive each, with
+SHA-256 checksums and instructions. Download one with
+`gh release download checkpoints-seed0 -p 'C3_*'`.
+
 ## Documents
 
 - `docs/RESULTS.md` - every measured result, with intervals and caveats.
