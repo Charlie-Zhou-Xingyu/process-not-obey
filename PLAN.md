@@ -1,32 +1,74 @@
 # 推进计划：Learning to Process, Not Obey
 
-更新于 2026-11-18（周三）。对应 Proposal v4。代码讲解见 `docs/WALKTHROUGH.md`，设置出处见 `docs/DESIGN.md`（英文），所有数字在 `configs/experiment.yaml`。
+更新于 2026-11-18 晚（服务器到位当天）。对应 Proposal v4。代码讲解见 `docs/WALKTHROUGH.md`，设置出处见 `docs/DESIGN.md`（英文），所有数字在 `configs/experiment.yaml`。
+
+## 0. 一页看懂：我们在做什么实验
+
+**要回答的问题。** 模型读网页、邮件这类外部内容时，里面可能夹着一句"指令"（prompt injection）。现在的安全训练教模型"无视"这句话，副作用是连正常内容也一起丢掉（比如让它翻译一段话，它把那句话跳过不翻）。我们想验证：改成教模型"把这句话当成普通内容来处理（照样翻译、照样计数），但不去执行它"，能不能同样安全、又少丢内容。
+
+**做法。** 同一个基座模型（Qwen3.5-2B），用六种不同的训练数据各训练一次（每种 4,000 对样本，3 个随机种子，一共 18 次训练），再用同一套考题比较。
+
+| 条件 | 训练时教它什么 | 用来回答什么 |
+|---|---|---|
+| C1 ignore + ordinary | 无视注入句（现有的标准做法） | 基线 |
+| C2 ignore + fidelity | 无视注入句，另外加"别丢内容"的样本 | 已有的修补办法够不够 |
+| C3 process + ordinary | 把注入句当内容处理 | **我们的方法** |
+| C4 process + fidelity | 两样都加 | 两者能不能叠加 |
+| C5 target control | 和 C3 的输入完全一样，但教它把注入句删掉再处理 | **主对照**：C3 比它好，才说明起作用的是"处理"本身 |
+| C6 boundary control | 和 C3 同样的冲突，但放在 system / user 两条消息之间 | 效果是否依赖"指令 / 数据"这条边界 |
+
+**考题。**
+
+| 评测 | 测什么 |
+|---|---|
+| SecFid（主指标） | 1,168 道带注入的题。看 safe-processing rate：注入句被当内容处理了、并且没被执行 |
+| SEP、transfer attack | 安全性：换别的攻击写法，模型会不会照做 |
+| IFEval | 训练有没有把模型正常听指令的能力弄坏 |
+| SecFid 干净输入、held-out 冲突题 | 辅助：模型本来会不会做这些任务；有没有学会训练里教的东西 |
+
+**四个 gate（关卡）。** 正式训练前的检查，每一项不过都有对应的退路（第 5 节）。
+
+| gate | 检查什么 | 为什么要查 |
+|---|---|---|
+| 0 | vLLM（快的推理引擎）能不能跑 Qwen3.5、输出和 transformers 是否一致 | 评测全靠它，不一致的话后面的数字都不可信 |
+| 1 | 113 种文本操作里，基座模型本来就能做对的有哪些 | 只用它会做的操作造数据和出题。这样模型答错时才能归因于"被注入带偏"，而不是"本来就不会" |
+| 2 | 我们的 SecFid 打分能否复现论文里发表的数字 | 打分代码是我们按规则重写的，要先证明没写错 |
+| 3 | 基座模型在 SecFid 上是否真的会被攻击、干净输入上能否做对题 | 基座本来就不上当，或者本来就不会做题，实验就没有意义 |
+| 4 | C1 训练后是否出现"丢内容"的现象 | 这是我们要修的问题，得先在这个规模上复现出来 |
 
 ## 1. 现在在哪
 
-**已完成（不需要服务器）**
+**已完成**
 
-- 整条流水线的代码：变换目录 → 六个条件的数据 → LoRA+DPO 训练 → 合并导出 → 六个评测（SecFid、SecFid 干净输入、SEP、transfer attack、IFEval、held-out 冲突题）→ bootstrap 报告。
-- goal–goal 论文 [8] 的 99 条指令全部用 Python 重写（原作者没放实现）。按论文的构造方式跑，我们的实现复现了它的筛选计数：9,702 对里去掉 156 对空回答和 2 对相同回答，剩 9,544 对。
-- 测试：73 个单元测试和 2 个端到端测试通过。另有一个彩排脚本（`scripts/rehearsal.sh`）：在仓库的临时副本里用微型模型把 gate、训练、评测、报告四个正式脚本真的跑一遍，本机已跑通。端到端测试用一个 4 层、随机权重、与 Qwen3.5 同架构的微型模型，在 CPU 上跑通构造数据 → 训练 4 步 → 合并 → 生成 → 打分，并检查合并后的模型与"基座 + adapter"的输出 logits 一致。
-- 真实 Alpaca 数据已下载，process / target / boundary / fidelity 四类样本可以直接生成（不需要模型）。
+- 整条流水线的代码和测试（80 个测试，本机和服务器上都通过）。
+- 服务器环境：Vast.ai 的 RTX 4090 48 GB。torch 2.14.0、transformers 5.22.2、vLLM 0.34.0、trl 1.18.1、peft 0.21.3。
+- 彩排：在服务器的 GPU 上用微型模型把 gate、六个条件的训练、六个评测、报告、合并导出全部跑通（`PNO_DEVICE=cuda bash scripts/rehearsal.sh`）。
+- gate 0 通过，gate 1 有结果（第 7 节）。
+- 训练数据：基座模型生成了 17,969 条目标回答，其中 16,288 条可用（其余撞到 1,024 token 上限被丢弃）；六个条件 × 三个 seed 的 18 份数据各 4,000 对，都已组装好。
 
-**还没做（都要 GPU）**
+**正在跑（11/18 晚启动，服务器 tmux 会话 `seed0`，日志 `seed0.log`）**
 
-- Proposal 里写"11 月 15 日前"完成的四项检查（下面叫 gate 1–4）一项都还没跑，因为服务器没到。
-- ignore-style 和 ordinary 两类数据的目标回答要由基座模型生成。
-- 18 次训练、22 个模型的评测。
-- vLLM 路径只写了代码，没在 GPU 上跑过（Mac 上装不了 vLLM）。到服务器第一件事就是跑后端自检（`python -m pno.tools.check_backend`）；不行就用 `PNO_BACKEND=hf`。
+- gate 1 的对照版本（可信指令后加一句"只输出结果"，第 6 节第 13 条）。
+- gate 4：训练 C1（seed 0）→ 第二次后端自检 → 基座和 C1 的 SecFid 输出。
+- 其余五个条件的训练（seed 0）、全部评测的生成、不依赖受限模型的打分、报告。
 
-**时间上的问题**
+**卡在 Hugging Face 登录上的部分**
+
+服务器上还没有 HF token（只能本人填），所以：
+
+- SecFid 的翻译题和编辑题（1,168 题里的 551 题）要用 `google/embeddinggemma-300m` 打分，暂时算不了。executed 率（全部题目）和计数、抽取两类题的标签不需要它，先用 `python -m pno.eval.secfid partial outputs/eval/<模型>` 算出来。
+- gate 2 的完整对比、未防御的 `meta-llama/Llama-3.1-8B-Instruct` 这个参考模型，也要等登录。
+- 登录之后只需要再跑一次 `bash scripts/40_eval.sh --seeds 0` 和 `bash scripts/50_report.sh`：已有的生成结果会被直接打分，不重复生成。
+
+**时间**
 
 | 日期 | Proposal 的安排 | 现状 |
 |---|---|---|
-| 11/15 | 四项检查完成 | 未做，顺延到服务器到位当天 |
-| 11/20（周五） | 六个条件 × 1 个 seed 的结果，meeting | 只有服务器在 11/19 到位才赶得上 |
-| 11/23（周一） | Report V1 | 服务器最晚 11/21 到位 |
-| 12/7（周一） | 其余 seed、错误分析、Report V2 | 不受影响 |
-| 12/12（周六） | 终稿、代码、checkpoint | 不受影响 |
+| 11/15 | 四项检查完成 | 服务器 11/18 才到位。gate 0、1 已完成，gate 3、4 当晚在跑，gate 2 等 HF 登录 |
+| 11/20（周五） | 六个条件 × 1 个 seed 的结果，meeting | seed 0 的训练和评测 11/18 晚在跑 |
+| 11/23（周一） | Report V1 | 按计划 |
+| 12/7（周一） | 其余 seed、错误分析、Report V2 | 按计划 |
+| 12/12（周六） | 终稿、代码、checkpoint | 按计划 |
 
 ## 2. 要回答的问题和判定规则
 
@@ -42,69 +84,73 @@
 
 ## 3. 时间表
 
-GPU 时间是估计值，没有实测过；第一天跑完 gate 后按实际耗时修正。
+实测耗时来自 11/18 的服务器（RTX 4090 48 GB）；标"估计"的还没有实测。
 
-| 阶段 | 内容 | 估计耗时（1 张 A100） | 目标日期 |
+| 阶段 | 内容 | 耗时 | 状态 |
 |---|---|---|---|
-| M0 | 代码、测试（已完成）；本机试点（第 7 节） | 不占 GPU | 11/18 |
-| M1 | 装环境，gate 1–3 | 环境 1 小时；gate 约 1–2 小时 | 服务器到位当天 |
-| M2 | 生成目标回答，gate 4（C1 训练 + 评测） | 约 1 小时 | 同一天或次日 |
-| M3 | 六个条件 × seed 0 的训练和评测，基座 + 3 个参考模型 | 训练 6 次约 1 小时；评测 10 个模型约 2–3 小时 | 到位后 1–2 天内 → Report V1 |
-| M4 | seed 1、2（12 次训练 + 评测） | 约 4–6 小时 | 11/30 前 |
+| M0 | 代码、测试 | 不占 GPU | 完成 |
+| M1 | 装环境，彩排，gate 0、1 | 环境约 45 分钟（主要是下载和编译）；gate 0 约 10 分钟（首次要编译内核）；gate 1 约 10 分钟（2.2 万条） | 完成（11/18） |
+| M2 | 生成目标回答，组装数据 | 13 分钟（1.8 万条） | 完成（11/18） |
+| M3 | gate 3、4；六个条件 × seed 0 的训练和评测，基座 + 参考模型 | 估计 3 小时 | 11/18 晚在跑 → 11/20 meeting、Report V1 |
+| M4 | seed 1、2（12 次训练 + 评测） | 估计 5–6 小时 | 11/30 前 |
 | M5 | 错误分析、Report V2 | 不占 GPU | 12/7 |
 | M6 | 终稿、整理代码、上传 checkpoint | 不占 GPU | 12/12 |
 
-如果服务器 11/19 到：11/20 的 meeting 能带上 gate 结果，大概率还有 seed 0 的表。如果 11/20 之后才到：meeting 上讲流水线、数据样例和本机试点（第 7 节），Report V1 报 seed 0。
+## 4. 服务器上的执行步骤
 
-## 4. 服务器到位后的执行步骤
-
-每一步都能断点续跑，已经完成的部分会跳过。随时用 `python -m pno.pipeline status` 看进度。
+每一步都能断点续跑，已经完成的部分会跳过。随时用 `python -m pno.pipeline status` 看进度。长任务放在 tmux 里跑。
 
 ```bash
-git clone https://github.com/Charlie-Zhou-Xingyu/process-not-obey.git && cd process-not-obey
-bash scripts/00_setup_server.sh          # 建 venv，装 vLLM/TRL/PEFT，拉第三方仓库，跑单元测试
-hf auth login                            # 账号要有 Llama-3.1-8B-Instruct 和 embeddinggemma-300m 的访问权限
+bash scripts/00_setup_server.sh          # 建 venv，装 vLLM/TRL/PEFT，拉第三方仓库，跑单元测试      （已完成）
+hf auth login                            # 本人执行；账号已有 Llama-3.1-8B-Instruct 和 embeddinggemma-300m 的权限  （未做）
+PNO_DEVICE=cuda bash scripts/rehearsal.sh   # 彩排：微型模型在 GPU 上把下面所有脚本跑一遍       （已通过）
+GATES=0 bash scripts/10_gates.sh         # 后端自检                                                  （已通过）
+GATES=1 bash scripts/10_gates.sh         # gate 1 → outputs/competence/qwen3.5-2b/keep.json           （已完成）
+bash scripts/20_build_data.sh            # 生成目标回答，组装六个条件 × 三个 seed                    （已完成）
 ```
 
+没有 HF token 时的跑法（11/18 晚用的就是这个，脚本在服务器的 `/workspace/run_seed0.sh`）：
+
 ```bash
-bash scripts/rehearsal.sh                # 彩排（约 10 分钟，CPU）：用微型模型把下面所有脚本跑一遍，确认环境和命令都通
-GATES=0 bash scripts/10_gates.sh         # 后端自检：vLLM 能不能跑 Qwen3.5、和 transformers 的输出是否一致
-GATES=1 bash scripts/10_gates.sh         # gate 1：基座模型能做哪些变换 → outputs/competence/qwen3.5-2b/keep.json
+python -m pno.pipeline train --seeds 0                                     # 六个条件
+python -m pno.tools.check_backend --adapter runs/C1_ignore_ordinary-seed0   # 运行时 LoRA 还是合并 checkpoint
+python -m pno.pipeline eval --seeds 0 --models base_qwen35_2b meta_secalign_8b secpo_llama31_8b --no_score   # 只生成
+python -m pno.pipeline eval --seeds 0 --models base_qwen35_2b meta_secalign_8b secpo_llama31_8b \
+    --benchmarks sep transfer ifeval conflict                               # 不需要受限模型的打分
+python -m pno.eval.secfid partial outputs/eval/*                            # SecFid 里不需要 embedding 模型的部分
+bash scripts/50_report.sh
 ```
 
-自检不过（vLLM 跑不了基座模型）就在后面所有命令前加 `PNO_BACKEND=hf`。
-
-看 `outputs/competence/qwen3.5-2b/competence.csv`，确认保留下来的变换够用（标准见第 5 节），再继续：
+登录 HF 之后补齐（已有的输出不会重新生成）：
 
 ```bash
-GATES="2 3" bash scripts/10_gates.sh     # gate 2：SecFid 打分能否复现发表的数；gate 3：基座模型是否易受攻击、能否做任务
+GATES="2 3" bash scripts/10_gates.sh     # gate 2：SecFid 打分能否复现发表的数；gate 3：基座模型
 python -m pno.eval.secfid crosscheck --outputs outputs/eval/meta_secalign_8b/secfid.jsonl   # 我们的打分 vs 官方脚本
-GATES=4 bash scripts/10_gates.sh         # gate 4：生成目标回答 + 组装数据 + 训练 C1 + 第二次后端自检（LoRA / 合并哪种能用）+ 评测
+bash scripts/40_eval.sh --seeds 0        # 补上 SecFid 的完整打分和 Llama-3.1-8B-Instruct
+bash scripts/50_report.sh                # outputs/report/report.md → Report V1 的表
 ```
 
-四个 gate 都过了之后：
+其余 seed：
 
 ```bash
-bash scripts/30_train.sh --seeds 0                       # 六个条件，seed 0
-bash scripts/40_eval.sh  --seeds 0 --cleanup_merged      # 六个训练模型 + 基座 + 三个参考模型
-bash scripts/50_report.sh                                # outputs/report/report.md → Report V1 的表
 bash scripts/30_train.sh --seeds 1 2
-bash scripts/40_eval.sh  --seeds 1 2 --models --cleanup_merged
-bash scripts/50_report.sh                                # 三个 seed 的置信区间 → Report V2
+bash scripts/40_eval.sh  --seeds 1 2 --models
+bash scripts/50_report.sh                # 三个 seed 的置信区间 → Report V2
 ```
 
-`crosscheck` 那一步会执行 SecFid 仓库里的官方 `evaluate.py`（第三方代码，我读过，只有字符串处理和 sentence-transformers 调用）。这一步我没有在本机执行，留给你们确认后跑。
+`crosscheck` 那一步会执行 SecFid 仓库里的官方 `evaluate.py`（第三方代码，我读过，只有字符串处理和 sentence-transformers 调用）。这一步我没有执行，留给你们确认后跑。
 
-## 5. 四个 gate：通过标准与退路
+## 5. 四个 gate：通过标准、结果与退路
 
-| gate | 看什么 | 通过标准 | 不通过怎么办 |
-|---|---|---|---|
-| 1 | 113 个变换（99 + 14）里，基座模型在无冲突输入上精确匹配率 ≥ 80% 且对内容敏感的有多少 | 保留的变换至少覆盖 8 种不同行为 | 打开 `data.trusted_suffix`（第 6 节第 13 条）；降阈值到 0.7；再加句子/行级操作（proposal 的风险 1）。保留数少时把 `data.injected_from` 改成 `all`，让注入句来自全部 113 条而不只是保留下来的那几条 |
-| 2 | Meta-SecAlign-8B 在 SecFid 上：发表值 security 99.3、fidelity 73.9 | security 差 ≤ 1.5 点，fidelity 差 ≤ 3 点 | 先查 prompt 模板（有没有多出 system 段）、最大生成长度、embedding 模型版本 |
-| 3 | 基座 Qwen3.5-2B 在 SecFid 上的 executed 率，以及干净输入上的正确率 | executed ≥ 20%；干净输入正确率 ≥ 50% | 换 Llama-3.1-8B（[6] 在它上面有完整数据） |
-| 4 | C1（ignore-style）训练后，SecFid 的 ignored 率比基座高多少 | ≥ 5 个点 | 先把 security pairs 翻倍；还不行换 Llama-3.1-8B（proposal 原话） |
+| gate | 看什么 | 通过标准 | 结果（11/18） | 不通过怎么办 |
+|---|---|---|---|---|
+| 0 | vLLM 与 transformers 在基座模型上的贪心输出是否一致（24 条） | 能跑，且大部分一致 | **通过。** 18 条变换类提示完全一致；6 条自由问答里 4 条中途措辞分叉（bf16 数值差异） | `PNO_BACKEND=hf` |
+| 1 | 113 个变换（99 + 14）里，基座模型在无冲突输入上精确匹配率 ≥ 80% 且对内容敏感的有多少 | 保留的变换至少覆盖 8 种不同行为 | **通过，但余量小。** 保留 13 个（目录 6 个 + 句/行级 7 个），按采样器的口径是 10 种行为。详见第 7 节 | 打开 `data.trusted_suffix`（保留数 13 → 21）；降阈值到 0.7；再加句子/行级操作 |
+| 2 | Meta-SecAlign-8B 在 SecFid 上：发表值 security 99.3、fidelity 73.9 | security 差 ≤ 1.5 点，fidelity 差 ≤ 3 点 | 等 HF 登录（fidelity 要用 embedding 模型） | 先查 prompt 模板（有没有多出 system 段）、最大生成长度、embedding 模型版本 |
+| 3 | 基座 Qwen3.5-2B 在 SecFid 上的 executed 率，以及干净输入上的正确率 | executed ≥ 20%；干净输入正确率 ≥ 50% | 在跑 | 换 Llama-3.1-8B（[6] 在它上面有完整数据） |
+| 4 | C1（ignore-style）训练后，SecFid 的 ignored 率比基座高多少 | ≥ 5 个点 | 在跑 | 先把 security pairs 翻倍；还不行换 Llama-3.1-8B（proposal 原话） |
 
-通过标准里的 8 种行为、1.5/3 点、20%/50% 是我定的操作性阈值，proposal 没写具体数，组里可以改。`python -m pno.pipeline gates` 会把四项的数字和结论打印出来。
+通过标准里的 8 种行为、1.5/3 点、20%/50% 是我在看到数据之前定的操作性阈值，proposal 没写具体数，组里可以改。`python -m pno.pipeline gates` 会把四项的数字和结论打印出来。
 
 gate 2 有一个已知的不确定来源：SecFid 论文没有规定 prompt 模板和最大生成长度，我们用的是 user/input 两段式、贪心解码、最多 2,048 个新 token。
 
@@ -125,7 +171,7 @@ Proposal 没写到这么细，下面是实现时定下来的。前 5 条会影�
 10. **按"行为"而不是按"指令"均匀采样变换。** 目录里有六七条指令对普通英文句子的效果都是"原样返回"（copy、NFC/NFD/NFKC、strip 等），不做平衡的话"原样复制"会占掉很大一部分数据。
 11. **每个 seed 内各条件共享组件。** C1/C3/C5/C6 的 ordinary 部分完全相同；C3/C5/C6 是同一批冲突的三种写法；C2/C4 的 fidelity 部分相同。
 12. **多加了两个评测**：SecFid 干净输入上的任务正确率（gate 3 要用，也用来解释 OTHER 率）；held-out 冲突题（检查模型有没有学会训练任务本身）。
-13. **可信指令后面要不要加一句"只输出结果"**（`data.trusted_suffix`，默认不加）。目录原文不规定输出格式，2B 模型经常先解释再给答案，精确匹配会判错，于是"会做但格式不对"的变换也被 gate 1 筛掉。加这句话只改可信一侧的指令，注入指令保持目录原文。是否打开，看第 7 节试点里两种写法各能保留多少变换。
+13. **可信指令后面要不要加一句"只输出结果"**（`data.trusted_suffix`，默认不加）。目录原文不规定输出格式，2B 模型经常先解释再给答案，精确匹配会判错，于是"会做但格式不对"的变换也被 gate 1 筛掉。加这句话只改可信一侧的指令，注入指令保持目录原文。服务器上的对照结果见第 7 节：不加保留 13 个变换，加了保留 21 个；默认仍不加。
 
 ### 代码审查中修掉的问题（11/18）
 
@@ -136,24 +182,53 @@ Proposal 没写到这么细，下面是实现时定下来的。前 5 条会影�
 - **句子级操作的参考答案。** 含缩写的句子（"Dr. Lee"、"U.S."）会被切成两句；伪完成式的输入里，分隔符行和带编号的假回答会被当成句子。现在 carrier 只取"恰好一句"的文本，句子级操作不用伪完成式位置。
 - **报告静默取交集。** 只要有一个模型是用 `--limit` 跑的，所有模型的指标都会只在那一小部分题上算。现在报告里会列出题数不齐的模型。
 
-## 7. 本机试点结果
+## 7. 服务器上的实测结果（11/18）
 
-在这台 Mac 上用真实的 Qwen3.5-2B（MPS，约 25 token/秒）做的预演。服务器上的正式 gate 1 是每个变换 25 条并带冲突版本；这里样本小，只用来提前看风险。
+原始输出都在服务器的 `outputs/` 下（`competence/`、`check_backend/`）。
 
-**8 条试探（每个变换 1 条，同一段两句话的输入）。** 做对的：大写（T03）、原样复制（T01）、给句子编号（我们加的句子级操作）。做错的：空格换下划线（T24，原样返回）、JSON 字符串（T88，包成了对象）、字符反转（T02，开始解释做法）、提取单词并小写（T47，原样返回）、删元音（T16，先解释再给出错误结果）。也就是说，目录里稍微"硬"一点的指令，2B 模型在没训练时基本做不对，这正是 proposal 的风险 1。
+### gate 1：基座模型会做什么
 
-**113 个变换 × 8 条的小规模 gate 1：没有跑完。** 这台 Mac 只有 16 GB 内存，Qwen3.5-2B 以 float32 放在 MPS 上要占约 7.5 GB，长时间批量生成把交换区占满（约 18 GB），进程跑了一小时仍未结束，已手动终止，没有产出任何数字。短的试探（几条、几十秒）可以在本机跑，成规模的 gate 1 只能等服务器，那边用 vLLM 是几分钟的事。
+每个变换 100 条无冲突提示（可信指令在 user 段，文本在 input 段），输出与 Python 算出的参考答案精确匹配才算对。
+
+- 113 个变换里 **73 个一条都没做对**，15 个低于 20%，只有 13 个 ≥ 80%。全部变换的平均正确率是 16.5%。
+- 保留的 13 个：原样复制（T01）、去首尾空白（T11）、压缩空白（T12）、CRLF→LF（T14）、小写（T04）、CSV 字段（T91）；句/行级的给句子编号、一句一行、数句子、每句首词、数行、合并行、每行加引用符。前四个对普通英文句子的效果都是"原样返回"，采样时算同一种行为，所以是 10 种行为。
+- 差一点的：数字换成 #（T23，76%）、大写（T03，66%）、项目符号（67%）。大写错在个别词上（"Y-Axis"、"VILLIERS"）。
+- 做错的方式（按第一次运行的 2,825 条统计）：完全正确 16.5%；答案对但外面包了解释 8.2%；把输入原样返回 15.1%；长篇解释 32.7%；其他错误 27.5%。也就是说，2B 模型失败的主要原因是"先解释一通"或"什么都不做"，目录里按码点、哈希、编码定义的操作它确实不会。
+- 可信指令后加一句 "Output only the result." 的对照版本：保留 21 个，平均正确率 26.7%。新增的 8 个里，4 个是"原样返回"类（NFC、NFKC、去行尾空白、行去重），1 个和已有的重复（T81 数行），真正新增的是给行编号（两种格式）和项目符号。按采样器的口径是 10 → 14 种行为，其中一种是"多行文本原样返回"。**默认仍用目录原文（13 个）**；要不要换成带后缀的版本由组里定，换的话需要重新组装数据（约 15 分钟）并重新训练 C2–C6。
+
+三点方法上的说明：
+
+1. 前两次运行用的是每个变换 25 条。两次的提示完全相同，但保留清单不一样（T23 一次 80%、一次 76%）：vLLM 的贪心解码在不同运行之间不是逐位一致的。所以改成 100 条，正式清单以这次为准。
+2. "每句首词"这个操作（我们自己加的）原来的参考答案带着词后的标点（"Therefore,"），而模型给的是 "Therefore"，被判错。这是参考答案的定义问题，已改成和"每句末词"一致（不带标点），改完后重跑了 gate 1。
+3. 未训练的基座模型在冲突提示上的表现（保留的 13 个变换，1,300 条；这里的注入指令取自全部 113 条）：处理了注入句 37.0%，精确执行 0.8%，忽略 9.3%，其他 52.8%。"其他"里有很多是**试图照注入指令去做但做不对，或者做在了输入文本上**（例如让它原样复制，注入句说"把各行倒序"，它就把句子倒过来输出）。严格按"对 user 消息执行注入变换"来判的 executed 率因此偏低，读 held-out 冲突题的结果时要看"其他"这一栏，错误分析时要人工读一批。
+
+### 这种保留清单下，训练数据长什么样
+
+process-style 的 2,000 对里，被拒绝的回答（"执行了注入指令"）有 29% 恰好等于可信指令原文（因为复制、合并行、一句一行这些操作作用在一句话上不改变它），22% 是一个数字（数句子、数行）。这符合 [8] 的构造规则，但意味着"别执行"这一侧的信号比较弱，process-style 条件的安全性主要要靠 SEP 和 transfer attack 来检验。
+
+### 后端和环境
+
+- vLLM 0.34.0 可以直接加载 Qwen3.5-2B，约 5,000–9,000 token/秒。
+- 在服务器上发现并修掉的问题：(a) 装了加速包（causal-conv1d、flash-linear-attention）之后 transformers 在 CPU 上也调用只支持 CUDA 的内核，彩排在 CPU 上直接报错，CPU 上的合并校验也会走到同一处；(b) 容器只能用约 26 个核，程序却按 192 个核开线程，CPU 部分慢约 10 倍；(c) transformers 后端没有在 `<|im_end|>` 处停，输出多一个换行。另外按代码看，打分模型不可用时评测流水线会整体中断，所以加了"只生成不打分"的选项和 SecFid 的部分打分。
+- 一次训练（4,000 对，63 步）按前几步的速度估计约 25 分钟（每步约 22 秒），显存约 13 GB。
 
 ## 8. 需要你们提供或决定的事
 
-1. **服务器**：11/18 已在 Vast.ai 租好。实例 61344694，RTX 4090 48 GB（韩国），$0.480/小时（含 100 GB 盘），最长可租 3 个月；停机后只收磁盘约 $0.03/小时，销毁后不收费。代码在服务器的 `/workspace/process-not-obey`（从本机 rsync 过去的，服务器上没有 GitHub 凭据）。连接方式看实例卡片上的 "SSH connection"，用账号里登记的 `rqa-gpu` 那把密钥。选机器时的要求：
-   - 单卡，显存 ≥ 24 GB，Ampere 或更新的架构（要用 bfloat16；Titan RTX、Quadro RTX 8000 这类 Turing 卡不行）。
-   - 驱动支持 CUDA 13.0 以上（Vast 上看 "Max CUDA"）：vLLM 0.34.0 把 torch 固定在 2.14.0，它自带的是 CUDA 13.0 运行库。
-   - 内存 ≥ 48 GB，磁盘 100 GB（三个 8B 参考模型约 48 GB，加环境和 Qwen；默认的运行时 LoRA 模式不产生合并 checkpoint。若退到合并模式，每个约 7 GB，用 `--cleanup_merged` 边评测边删）。
-   - 可靠性 ≥ 99%，按需计费（不要可抢占的），避开中国大陆机房（Hugging Face 访问不稳）。
-2. **Hugging Face 权限**：`meta-llama/Llama-3.1-8B-Instruct` 和 `google/embeddinggemma-300m` 的协议都已同意（11/18）。还差一步只能本人做：在服务器上执行 `hf auth login` 填入自己的 token，否则这两个模型下载不了（影响 SecFid 翻译/编辑题的打分和未防御 Llama 这个参考模型）。Meta-SecAlign-8B 和 SecPO 的 Llama 模型用的是 `Sizhe-Chen/` 下不设限的合并版。
+1. **在服务器上登录 Hugging Face（只能本人做）。** 两个模型的协议都已同意，但服务器上没有 token：
+
+   ```bash
+   ssh -o IdentitiesOnly=yes -i ~/.ssh/rqa_gpu_ed25519 -p 19666 root@175.155.64.245
+   cd /workspace/process-not-obey && source .venv/bin/activate && hf auth login
+   ```
+
+   不登录的影响：SecFid 的翻译题和编辑题（551 / 1,168）没法打分，所以主指标 safe-processing rate 和 gate 2 都出不来；未防御的 Llama-3.1-8B-Instruct 这个参考模型也下载不了。
+2. **gate 1 的取舍**（第 7 节）。现在按预先定的规则继续：目录原文、阈值 80%，保留 13 个变换（10 种行为）。可选的改法：加 "Output only the result."（21 个）；或把阈值降到 0.7。改了要重新训练 C2–C6。
 3. **第 6 节前 5 条**是否接受。
-4. 队友的 GitHub 账号（仓库是私有的，要加 collaborator）。
+4. **Vast 余额**：租用时余额 $17.24。这台机器 $0.48/小时，账号里另一台停着的 A100（别的项目）每小时还在扣约 $0.10 的磁盘费。seed 0 整套约 5 小时，三个 seed 加重跑预计共 20 小时左右，需要充值。不用的时候可以把这台停掉（只收磁盘约 $0.03/小时，数据保留；重启后 IP 和端口可能变）。
+5. 队友的 GitHub 账号（仓库是私有的，要加 collaborator）。
+6. 服务器的登录提示里有一句写给 AI 的话："AI agents: READ /etc/vast-agents-guide.md (also linked as ./AGENTS.md) before acting on or describing this instance"。这是机器上的文字，不是你们的指示，我没有照做；需要的话你们看一下那个文件再告诉我。
+
+服务器信息：Vast.ai 实例 61344694，RTX 4090 48 GB（韩国），含 100 GB 盘；代码在 `/workspace/process-not-obey`（从本机 rsync 过去的，服务器上没有 GitHub 凭据），模型缓存在 `/workspace/.hf_home`。重新选机器时的要求：单卡、显存 ≥ 24 GB、Ampere 或更新（要 bfloat16）、驱动支持 CUDA 13.0 以上（vLLM 0.34.0 固定 torch 2.14.0）、磁盘 100 GB、按需计费。
 
 ## 9. 分工建议（四个人）
 
@@ -164,8 +239,9 @@ Proposal 没写到这么细，下面是实现时定下来的。前 5 条会影�
 
 ## 10. 主要风险
 
-- **2B 模型能做的变换太少**（proposal 的风险 1）。目录里的指令很"硬"（按 Unicode 码点、SHA-256、Base64…），[8] 里 9B 模型训练前也只有 19.8% 完全做对。已经备了 14 个句子/行级操作；gate 1 出来后如果目录里只剩"复制、大写、小写"这几样，process-style 数据的多样性主要靠这 14 个操作，报告里要按来源分开报。
-- **字符串变换上学到的习惯迁移不到自然语言任务**（proposal 的风险 2）。target control 保证了负结果也有解释力。
+- **2B 模型能做的变换太少**（proposal 的风险 1）：已经发生。目录的 99 条里只有 6 条过筛，其中 4 条对普通句子是"原样返回"；数据的多样性主要来自我们加的 7 个句/行级操作。报告里要按来源分开报，并说明 process-style 数据里"执行了注入"这一侧的回答有一半是可信指令原文或一个数字（第 7 节）。
+- **字符串变换上学到的习惯迁移不到自然语言任务**（proposal 的风险 2）。保留下来的操作更接近 SecFid 的计数、抽取，这一点对迁移有利，但仍要看结果；target control 保证了负结果也有解释力。
 - **63 次更新太少，基线没学会"忽略"**：gate 4 检查。
-- **vLLM 与 Qwen3.5 / 合并后的 checkpoint 不兼容**：合并时保留了原 checkpoint 的布局和文件名来降低风险；退路是 `PNO_BACKEND=hf`，慢但能跑。
+- **严格的 executed 标签低估"照做"**：基座模型常常试着执行注入指令但做不对。held-out 冲突题要同时看"其他"一栏。SecFid 的 executed 口径不同：看注入问题的答案特征串有没有出现在输出里。
 - **gate 2 对不上**：SecFid 没规定 prompt 格式，可能要试两三种格式。
+- **vLLM 的输出在两次运行之间不完全一致**：对逐题配对的 bootstrap 是噪声不是偏差，但边界上的判断（如 gate 1 的阈值）要用足够多的题。
