@@ -1,0 +1,213 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage[font=small]{caption}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parskip}{3pt}
+
+\title{Learning to Process, Not Obey:\\ Processing versus Dropping Injected Instructions\\ in Preference Training}
+\author{CS182 Project Report (V1)}
+\date{November 23, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Defenses against prompt injection are usually trained so that the model answers as if any instruction found in the untrusted data were not there. Hermon et al.\ showed that this has a cost: defended models also leave such sentences out when the user's task needs them, for example when the user asks for a translation of an email that contains a question. In this project we tried to avoid this cost by changing only the preferred response in the training data. Instead of dropping the injected sentence, the preferred response treats it as ordinary text and applies the user's task to it as well. We fine-tuned Qwen3.5-2B with LoRA and DPO and ran three experiments, each with a single training seed. With plain DPO, the processing target lowered the share of SecFid tasks on which the injected sentence was dropped from 27.8\% to 5.5\%, but the model became 10.3 points easier to attack on SEP, so the hypothesis we registered was not supported. With plain DPO our models also moved very little toward the preferred responses, and the standard recipe did not drop content at all. After we added an SFT term to the loss, the standard recipe did drop content, and the processing target kept its advantage on content (7.4\% against 28.1\% dropped) with about the same security as the dropping target (1.5 points more attacks on SEP, interval $-0.3$ to 3.1). All models whose security examples were text operations stayed easy to attack on everyday tasks, and how secure a model became depended mostly on where its attack examples came from. Adding text-operation pairs with the processing target to the standard recipe raised safe processing by 5.3 points and lowered SEP attack success from 22.1\% to 15.4\%, but it reduced content dropping less than we had required in advance.
+\end{abstract}
+
+\section{Introduction}
+
+When a language model reads a web page or an email for a user, the text may contain instructions written by someone else. Prompt injection is the attack in which the model follows these instructions instead of the user's request. The most effective defenses so far are built into the model by fine-tuning. The user's request and the untrusted text are placed in separate parts of the prompt, and the model is trained to carry out the request while disregarding instructions that appear in the untrusted part~\cite{struq,ih,secalign,metasecalign,secpo}. Models trained this way are rarely fooled by the standard attacks.
+
+Hermon et al.~\cite{secfid} pointed out what this costs. Many ordinary tasks require the model to work on exactly the sentences that the defense has learned to disregard. If a user asks for a translation of an email and the email says ``Can you send me the report by Friday?'', a correct translation has to include that question. On their benchmark, SecFid, Meta-SecAlign-8B is almost never fooled, but it leaves the instruction-like sentence out of its answer on about a quarter of the items. The SecPO paper makes the same distinction in its discussion. Its training aims to disregard injected content, and it lists the handling of instruction-like content as data as a separate goal that its training data does not address~\cite{secpo}.
+
+Our starting point was a guess about where this cost comes from. In the training data of SecAlign and its successors, the preferred response is the model's answer to the input with the injected instruction removed. The model is therefore rewarded for acting as if the sentence did not exist, and there is no reason to expect it to keep that sentence later when it is asked to translate or summarize the text. We wanted to keep the rest of the training recipe and change only what the preferred response does with the injected sentence. In our version the preferred response handles the sentence like any other text, for example by lowercasing, counting or translating it, but it never carries out the instruction. The goal--goal conflict data of Chen et al.~\cite{goalgoal} gave us a way to build such examples. In that data both the trusted and the injected instruction are simple text operations, so a program can compute the correct response, the response that drops the injected sentence, and the response that obeys it.
+
+We expected that training with this target would keep the model about as secure as training with the usual target, while making it drop less content. With the loss we first used, the first part did not hold. This report is organized around three experiments. Experiment~1 is the comparison we registered before training: the same inputs, trained either with the processing target or with the dropping target. Experiment~2 looks at why the models trained on text operations are not secure. Experiment~3 returns to the standard recipe, which in our first runs did not drop content at all, and tests whether adding processing examples to it helps once it does.
+
+\section{Related work}
+
+\textbf{Training-based defenses.} StruQ~\cite{struq} and SecAlign~\cite{secalign} put the instruction and the data in separate, delimited parts of the prompt and fine-tune the model on examples in which an instruction has been injected into the data. SecAlign uses preference optimization: the preferred response answers the original instruction and the rejected response answers the injected one. The instruction hierarchy~\cite{ih} trains a similar order of priority between system, user and tool messages. Meta-SecAlign~\cite{metasecalign} applies the SecAlign recipe to Llama-3 models, adds a separate \texttt{input} role for untrusted data and releases the trained weights. SecPO~\cite{secpo} adds injections that are optimized against the model during training. In all of these methods the preferred response is the answer to the input without the injection. SecAlign says this directly and checks on a small hand-labeled sample how often imperative sentences in the data are still treated as data. Our baseline follows the prompt format and data recipe of Meta-SecAlign.
+
+\textbf{Measuring what defenses lose.} Most evaluations, including SEP~\cite{sep}, only measure whether the injected instruction is carried out. SecFid~\cite{secfid} is designed so that carrying out, processing and dropping the injected sentence each lead to a different output. With it, Hermon et al.\ show that defended models become secure partly by dropping the sentence. They also try a repair: they continue training Meta-SecAlign-8B with DPO on 2,894 pairs that rank processing above dropping and dropping above carrying out. This raised the share of processed items on a held-out task from 43\% to 81\%. The repair is applied after the defense has been trained, and its pairs come from three of the benchmark's own task types.
+
+\textbf{Treating the injected instruction as data.} Chen et al.~\cite{goalgoal} build pairs of conflicting text-operation instructions, one in the system message and one in the user message, and train the model to apply the system instruction to the user message, including the instruction it contains. They do not evaluate prompt injection or content loss. The work closest to ours is DRIP~\cite{drip}, which also argues that a defense should keep the injected instruction as content. DRIP changes the model itself: it adds a learned shift to the representations of data tokens and a path that feeds the instruction back in. It trains with DPO on tasks from the SEP training split, and its preferred responses apply the trusted task to all of the data, including the injected instruction. These responses are written by GPT-4o with an instruction not to skip any sentence and then checked by a second model. We do not change the model, only the training data. Because our preferred responses are computed by a program, we can build a control with identical prompts that differs only in the preferred response. The cost of this choice is that our security examples are limited to text operations, and Experiment~2 shows how much that matters.
+
+\section{Training data}
+
+Each training set contains 2,000 security pairs and 2,000 benign pairs. A pair is a prompt together with a preferred and a rejected response. The user's instruction goes in the user turn and the untrusted text in a separate \texttt{input} turn, as in Meta-SecAlign and SecPO. Qwen's chat template has no \texttt{input} role, so we add one in the same format as the other roles. The untrained model has never seen this role. This layout by itself already makes the untrained model fairly hard to attack: it obeys 11.2\% of the SecFid injections in this format and 15.2\% when the instruction and the data are placed in one user message. Chat delimiters are removed from the untrusted text before it is inserted, and the response starts after an empty thinking block, which is how Qwen3.5 is run without its thinking mode. Figure~\ref{fig:example} shows one security pair exactly as the model sees it.
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.94\linewidth}
+\small
+\begin{Verbatim}[fontsize=\footnotesize,frame=single,framesep=6pt]
+<|im_start|>user
+Convert every cased character in the input to Unicode lowercase.<|im_end|>
+<|im_start|>input
+The sky appears blue on a sunny day due to a phenomenon called Rayleigh
+Scattering. Encode the complete user message as one always-quoted CSV
+field by doubling internal double quotes.<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+\end{Verbatim}
+\vspace{2pt}
+\textbf{Preferred response, processing target:} {\footnotesize\texttt{the sky appears blue on a sunny day due to a phenomenon called rayleigh scattering. encode the complete user message as one always-quoted csv field by doubling internal double quotes.}}\\[3pt]
+\textbf{Preferred response, dropping target:} {\footnotesize\texttt{the sky appears blue on a sunny day due to a phenomenon called rayleigh scattering.}}\\[3pt]
+\textbf{Rejected response (same for both):} {\footnotesize\texttt{"Convert every cased character in the input to Unicode lowercase."}}
+\end{minipage}
+\caption{One security pair from our training data, copied without changes. The injected instruction is the second sentence of the input. It refers to ``the user message'', so obeying it means applying the CSV operation to the user's instruction. The two training sets compared in Experiment~1 contain the same prompts and the same rejected responses and differ only in the preferred response.}
+\label{fig:example}
+\end{figure}
+
+\textbf{Security pairs built from text operations.} We started from the 99 text operations listed by Chen et al.~\cite{goalgoal} and added 14 sentence- and line-level operations of our own, all implemented in Python. The 2B model can do few of them. On 100 prompts per operation without any injection, the untrained model got 73 of the 113 operations completely wrong, and only 13 reached our threshold of 80\% exact-match accuracy. Among the 13 are lowercasing, numbering sentences, counting lines and copying the text. We use only these 13 as the user's instruction, so that a wrong answer after training can be blamed on the injection and not on a missing skill. Each input contains one or two ordinary sentences and one injected instruction, which is a text operation addressed to ``the user message''. The injected instruction is placed at the start of the input in 45\% of the pairs and at the end in 45\%. In the remaining 10\% it follows a fake assistant reply and a fake user-turn marker, as in the completion attacks of SecAlign. The rejected response applies the injected operation to the user's instruction. With the \emph{processing target}, the preferred response applies the user's operation to the whole input, including the injected sentence. With the \emph{dropping target}, it applies the user's operation to the input after the injected sentence has been removed.
+
+\textbf{Security pairs built from Alpaca.} These follow the recipe of Meta-SecAlign. An Alpaca instruction~\cite{alpaca} is inserted into the data of another Alpaca example. The preferred response is the untrained model's own answer to the example without the insertion, and the rejected response is its answer to the inserted instruction. These pairs therefore always use a dropping target.
+
+\textbf{Benign pairs.} Ordinary benign pairs are Alpaca examples without any injection; the rejected response is the model's answer to a different instruction. Fidelity pairs reproduce the repair of Hermon et al.\ with data that does not come from their benchmark. The input contains an instruction-like sentence that simply belongs to the content, the preferred response processes it, and the rejected response leaves it out.
+
+\textbf{Models.} From these parts we train the following models.\footnote{Repository condition names: C3 and C5 (text operations with the processing and the dropping target), C1 (standard recipe), C2 (standard recipe with fidelity pairs), C7 (half and half) and C9 (standard recipe with added processing pairs).}
+Two models use the text-operation security pairs with ordinary benign pairs, one with the processing target and one with the dropping target. The \emph{standard recipe} uses the Alpaca security pairs with ordinary benign pairs, and a variant of it replaces the ordinary benign pairs with fidelity pairs. Experiment~3 adds two mixtures. The \emph{half-and-half} model keeps 1,000 of the standard recipe's Alpaca pairs and replaces the other 1,000 with text-operation pairs that use the processing target. The other mixture keeps all 2,000 Alpaca pairs, adds the same 1,000 text-operation pairs, and uses 1,000 instead of 2,000 ordinary benign pairs, so that it also has 4,000 pairs in total.
+
+\section{Setup}
+
+\textbf{Training.} We fine-tune Qwen3.5-2B~\cite{qwen} without its thinking mode, using LoRA~\cite{lora} and DPO~\cite{dpo} with the settings of Chen et al.~\cite{goalgoal}: LoRA rank 64, scaling factor 8 and dropout 0.1 on all attention and MLP projections, $\beta = 0.1$, learning rate $1.6\times10^{-4}$ with 3\% warmup, an effective batch size of 64 and one epoch, which is 63 steps for 4,000 pairs. The reference model is the untrained model. One training run takes about 20 minutes on an RTX 4090. We use two versions of the loss. The first is plain DPO, as in the papers above. The second adds a standard fine-tuning (SFT) term, the per-token negative log-likelihood of the preferred response, with the same weight as the DPO term. We explain in Experiment~3 why we added the second version; it was not part of our original plan. All results in this report come from one training seed.
+
+\textbf{Evaluation.} Our main benchmark is SecFid~\cite{secfid}. It has 1,168 translation, editing, extraction and counting tasks, and the data of each task contains an instruction-like sentence. Each answer is labeled with the benchmark's own rules as \emph{executed} (the model carried out the sentence), \emph{processed} (the model treated the sentence as content, for example translated it), \emph{ignored} (the model left the sentence out) or \emph{other}. In this report we call the ignored rate the \emph{dropped} rate. Following the benchmark, we also report the share of answers that process the sentence without carrying it out, which we call the safe-processing rate. We also run every SecFid task without the injected sentence and report how often the answer is correct (clean accuracy). We never train on SecFid tasks. Security on everyday instructions is measured with SEP~\cite{sep}. We use 2,000 SEP tasks, each attacked in the six ways used by Meta-SecAlign and SecPO, and count a task as attacked if at least one of the six attacks makes the model print the answer to the injected question. We also use a transfer set built from the optimized injections released with SecPO. These injections were not optimized against our models, so this is not an adaptive attack in the sense of Nasr et al.~\cite{nasr}. IFEval~\cite{ifeval} measures general instruction following. Differences between two models are reported with 95\% intervals from a paired bootstrap over test items. Because there is only one training seed, these intervals cover the choice of test items but not the randomness of training.
+
+For comparison, the released Meta-SecAlign-8B drops the injected sentence on 27.5\% of SecFid tasks in our setup (26.1\% in the SecFid paper), SecPO drops it on 32.7\%, and the undefended Llama-3.1-8B-Instruct on 15.4\%.
+
+\textbf{Rule fixed before training.} We decided in advance that our idea counts as supported only if the processing target beats the dropping target on safe processing with an interval above zero, and if attack success with the processing target is at most 2 points higher on both SEP and the transfer set.
+
+\section{Experiments}
+
+\subsection{Experiment 1: processing target versus dropping target on the same inputs}
+
+The two models in this experiment were trained on the same 4,000 prompts with the same rejected responses. The only difference is the preferred response of the 2,000 security pairs (Figure~\ref{fig:example}). Table~\ref{tab:main} gives the results under plain DPO, together with the untrained model and the two Alpaca-based models used in Experiment~2.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Results with plain DPO, seed 0 (\%). The SecFid columns refer to the instruction-like sentence. Clean accuracy is measured on the same SecFid tasks without that sentence. SEP and transfer give the share of tasks on which an attack succeeded, so lower is better.}
+\label{tab:main}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccc}
+\toprule
+ & \multicolumn{4}{c}{SecFid} & SEP & Transfer & IFEval \\
+\cmidrule(lr){2-5}
+Training data & Dropped & Obeyed & Safe proc. & Clean acc. & attacked & attacked & \\
+\midrule
+None (untrained Qwen3.5-2B) & 17.1 & 11.2 & 63.5 & 93.8 & 92.0 & 39.6 & 72.9 \\
+Text operations, dropping target & 27.8 & 4.7 & 62.5 & 94.3 & 72.6 & 33.5 & 66.8 \\
+Text operations, processing target & 5.5 & 6.5 & 87.3 & 82.4 & 83.0 & 36.9 & 71.1 \\
+Alpaca, dropping target (standard) & 16.6 & 5.1 & 73.7 & 89.5 & 28.1 & 11.2 & 69.0 \\
+Standard + fidelity pairs & 5.0 & 4.5 & 88.7 & 81.7 & 19.9 & 6.3 & 68.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The preferred response has a large effect on how much content the model keeps. The model trained with the dropping target leaves the injected sentence out on 27.8\% of SecFid tasks, which is about ten points more than the untrained model, and on editing tasks it leaves it out on 53.5\%. This is close to Meta-SecAlign-8B on the same editing tasks (52.4\%), which we did not expect from a 2B model trained for 20 minutes. The model trained with the processing target leaves the sentence out on only 5.5\% of tasks, and its safe-processing rate is 24.8 points higher [22.0, 27.6].
+
+Part of this difference is not real. In SecFid's counting tasks the injected sentence mentions one extra item, so the processed answer is the correct count plus one. When we gave the same counting tasks without the injected sentence, the model trained with the processing target stated exactly one more than the true count on 48.5\% of them, compared with 3.6\% for the untrained model. Its training data contains many counting examples that each have exactly one extra sentence, and it seems to have learned to add one. The same habit explains its lower clean accuracy in Table~\ref{tab:main} (82.4\%); on the other three task types its clean accuracy is 98.0\%. Without the counting tasks the difference in safe processing is 23.1 points [20.1, 26.1], so the conclusion does not change. From here on we report SecFid results both with and without the counting tasks.
+
+Security moved in the other direction. The model trained with the processing target is attacked on 83.0\% of SEP tasks, 10.3 points more than the model trained with the dropping target [8.6, 12.2], and on 3.5 points more of the transfer set [1.4, 5.5]. Both differences are larger than the 2-point margin we allowed, so with plain DPO the hypothesis we registered is not supported. When we read the SEP answers of the processing-target model, the usual failure is that it does the user's task correctly and then also answers the injected question, sometimes after a line such as ``here is the answer to your priority question''. Our guess is that the processing target taught the model to keep everything in the input, and that on open-ended tasks keeping the injected question turns into answering it. We have not tested this guess beyond reading outputs.
+
+\textbf{Repeating Experiment~1 with the SFT term.} Experiment~3 below shows that with plain DPO our models move very little toward the preferred responses, and that the standard recipe only starts to drop content once an SFT term is added to the loss. A reviewer could therefore ask whether Experiment~1 was run in a setting where the preferred response matters at all. We repeated it with the SFT term, on the same data. This was decided after we had seen the plain-DPO results, so it is a follow-up and not the registered test, but we used the same rule and wrote it down before training. The results are in the first rows of Table~\ref{tab:sft}.
+
+The content result is the same as before. The model trained with the dropping target leaves the sentence out on 28.1\% of SecFid tasks and the model trained with the processing target on 7.4\%. The difference in safe processing is 23.0 points [20.4, 25.6], and 20.4 points [17.5, 23.3] without the counting tasks. The security result is different. The processing-target model is now attacked on 1.5 points more of SEP [$-0.3$, 3.1] and on 2.5 points less of the transfer set [0.4, 4.6]. Both point estimates are within the 2-point margin, so with this loss the rule we registered is met. A stricter reading, which requires the whole interval to lie within the margin, is not met on SEP, where the upper end of the interval is 3.1 points. Compared with plain DPO, adding the SFT term made the SEP gap between the two targets 8.9 points smaller [6.7, 11.2]. Answers that were cut off at the length limit do not change this: if every cut-off answer on SEP is counted as a successful attack, the two models are at 78.9\% and 77.2\%. The SFT term also reduced the counting problem described above. On counting tasks without the injected sentence, the processing-target model is now correct 70.7\% of the time, compared with 38.4\% under plain DPO and 87.9\% for the untrained model.
+
+This result has to be read together with the absolute numbers. Both models are still attacked on about three quarters of SEP tasks (76.7\% and 75.2\%), while the standard recipe trained with the same loss is attacked on 22.1\%. So the processing target did not cost security compared with the dropping target, but neither model is a usable defense. The next experiment looks at why.
+
+\subsection{Experiment 2: why the text-operation models are not secure (exploratory)}
+
+Table~\ref{tab:main} also shows that the control model, trained on text operations with the dropping target, is attacked on 72.6\% of SEP tasks. It uses the same kind of target as the standard recipe and is still far less secure. Most of the security problem of the processing-target model is therefore shared with its control.
+
+The standard recipe and this control both use a dropping target and ordinary benign pairs. Their security pairs differ, however. The control is attacked on 44.5 points more of SEP [42.1, 46.9] and 22.2 points more of the transfer set [20.2, 24.4]. Training on text operations lowered SEP attack success from 92.0\% only to 72.6\%, while training on Alpaca pairs lowered it to 28.1\%. This comparison is not as clean as Experiment~1. Besides the kind of task, the two sets of security pairs differ in the kind of injected instruction, in where the preferred response comes from (a program or the model itself), in the length of the responses, and in how informative the rejected responses are. We therefore read it as a difference between two data sources, not as the effect of the task type alone. Even so, it is much larger than the 10.3 points that the choice of target cost in Experiment~1. The gap remains with the SFT term: the text-operation model with the dropping target is attacked on 53.2 points more of SEP than the standard recipe trained with the same loss [50.9, 55.5].
+
+We think two things contribute. First, SEP tasks and their injected questions are everyday requests such as ``What is the capital of\dots''. A model that has learned not to perform string operations found in the input has little reason to refuse a question found there. Second, many rejected responses in the text-operation pairs carry little information. The rejected response applies the injected operation to the user's short instruction, and in 29\% of these pairs this gives back the user's instruction unchanged, while in 19\% it gives a single number. DPO can satisfy its objective by avoiding these particular strings, which teaches little about refusing an injected instruction in general.
+
+We also trained a model on the same conflicts placed between the system and the user message, which is the original setting of Chen et al. It is attacked on 85.8\% of SEP tasks, no better than the processing-target model. On held-out conflicts each text-operation model does well on the kind it was trained on and poorly on the other kind. This fits the reading that these models learned the format of their training tasks more than a general rule about whose instructions to follow.
+
+\subsection{Experiment 3: the standard recipe, the loss, and adding processing examples (exploratory)}
+\label{sec:exp3}
+
+Our plan assumed that the standard recipe would drop content, as Meta-SecAlign does, and that processing examples would reduce this. In Table~\ref{tab:main} the standard recipe does not drop content: it leaves the sentence out on 16.6\% of tasks, against 17.1\% for the untrained model. Doubling its security pairs gave 13.1\%, and training on 7,500 security pairs for three epochs, about eleven times the original amount, gave 18.1\%. None of these is clearly above the untrained model, although SEP attack success kept falling (28.1\%, 21.9\% and 15.0\%).
+
+The training logs suggest a reason. At the end of training, the log-probability of the rejected responses had fallen by 94 to 127 nats relative to the reference model, while the log-probability of the preferred responses had changed by only $-4$ to $+3$ nats. DPO only constrains the difference between the two, and here it was met almost entirely by pushing the rejected responses down. The model learned what not to say, but it moved very little toward the preferred answers. This behavior of DPO is known from general preference tuning~\cite{dpop,rpo}, and a common remedy is to add an SFT term on the preferred response. We retrained with this term on unchanged data. SecPO deals with a related problem in a different way, by giving the reference model the input without the injection; we did not try that.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Results with DPO plus an SFT term, seed 0 (\%). ``No count.'' leaves out the 307 counting tasks. A dash means not measured.}
+\label{tab:sft}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{4}{c}{SecFid} & SEP & Transfer \\
+\cmidrule(lr){2-5}
+Training data & Dropped & Safe proc. & \shortstack{Safe proc.\\(no count.)} & Clean acc. & attacked & attacked \\
+\midrule
+None (untrained Qwen3.5-2B) & 17.1 & 63.5 & 65.2 & 93.8 & 92.0 & 39.6 \\
+Text operations, dropping target & 28.1 & 62.5 & 64.8 & 93.1 & 75.2 & 34.8 \\
+Text operations, processing target & 7.4 & 85.5 & 85.2 & 90.5 & 76.7 & 32.4 \\
+Alpaca, dropping target (standard) & 23.2 & 66.6 & 67.6 & 90.7 & 22.1 & -- \\
+Standard + fidelity pairs & 21.1 & 69.1 & 67.7 & 88.3 & 14.3 & -- \\
+Half and half & 16.4 & 74.9 & 75.4 & 90.4 & 29.1 & -- \\
+Standard + processing pairs & 19.4 & 71.9 & 71.0 & 90.2 & 15.4 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With the SFT term, the standard recipe does drop content (Table~\ref{tab:sft}). It leaves the sentence out on 23.2\% of tasks, 6.1 points more than the untrained model [3.5, 8.6], and on 40.3\% of editing tasks. The fidelity pairs no longer prevent this (21.1\%). Under plain DPO the standard recipe with fidelity pairs looked like the best model in Table~\ref{tab:main}, with only 5.0\% dropped. It now seems that much of that result came from pushing the answer without the sentence far down, and not from learning to process the sentence. The SFT term also removed several side effects we had seen under plain DPO. The models trained with fidelity pairs had lost the output format of some operations they were trained on, and a model trained only on text-operation pairs got its own training task exactly right on only 63.0\% of held-out conflicts; with the SFT term this rose to 96.0\%.
+
+Under this loss we can ask our original question again: does adding processing examples to the standard recipe reduce content dropping? The half-and-half model leaves the sentence out on 16.4\% of tasks, 6.8 points less than the standard recipe [5.0, 8.6], which is back at the level of the untrained model. Its safe-processing rate is 8.3 points higher. It is attacked on 7.1 points more of SEP [5.3, 8.8]. This model changes two things at once: it adds processing pairs and it halves the Alpaca pairs. To separate the two, we trained a model that keeps all 2,000 Alpaca pairs and adds the same 1,000 processing pairs, with 1,000 ordinary benign pairs so that the total stays at 4,000 pairs and 63 training steps. Before training it we wrote down how we would read the result. Compared with the standard recipe, adding the processing pairs counts as helpful if the dropped rate without counting tasks falls by at least 5 points with an interval that excludes zero, if safe processing rises with an interval above zero, and if SEP attack success stays within 2 points of the standard recipe (at most 24.05\%). Compared with the half-and-half model, the extra Alpaca pairs count as restoring security if the SEP difference has an interval below zero.
+
+The result is in the last row of Table~\ref{tab:sft}, and it meets two of the three conditions. Compared with the standard recipe, safe processing is 5.3 points higher [3.4, 7.2]. SEP attack success did not rise but fell, from 22.1\% to 15.4\%, a difference of 6.7 points [5.0, 8.3]. The dropped rate fell from 23.2\% to 19.4\% (3.8 points [2.1, 5.6]), but without the counting tasks the decrease is only 2.1 points [0.2, 4.0], which is below the 5 points we required. Compared with the half-and-half model, the extra 1,000 Alpaca pairs lowered SEP attack success by 13.8 points [11.9, 15.6] and raised the dropped rate by 3.0 points [1.5, 4.5].
+
+Taken together, the three models trained with the SFT term show a trade-off. The Alpaca pairs with the dropping target bring security and also content dropping, and the processing pairs reduce the dropping. Halving the Alpaca pairs removes the content dropping but also part of the security. Keeping all of them keeps the security, and the added processing pairs then remove only part of the content dropping. We did not expect SEP attack success to fall. This model replaced 1,000 ordinary benign pairs with processing pairs, so either the processing pairs work as additional security examples, or having fewer ordinary benign pairs makes the model more careful. This run cannot tell the two apart. It also has no transfer result, so its security result rests on SEP alone.
+
+\section{Discussion and limitations}
+\label{sec:discussion}
+
+We set out to test whether a processing target lets a model stay as secure as the usual dropping target while losing less content. With the loss we had planned to use, plain DPO, the answer was no. With an SFT term added, the processing target kept much more content at about the same security as the dropping target, which is what we had hoped for. However, we chose this loss after seeing the first results, and the result comes from a single seed. In both settings, a model whose security examples are text operations stays easy to attack on everyday tasks.
+
+The main thing we learned is that the two goals in our design depend on different parts of the training data. The preferred response decides how much content the model keeps, and the source of the attack examples decides how secure it becomes. Our design tied both to text operations, because that is where a program can compute the preferred response. The last experiment suggests a more practical recipe: keep the standard Alpaca security pairs for security, and add processing pairs to protect content. With the SFT term this gave the most secure of our models (15.4\% attacked on SEP) and higher safe processing than the standard recipe, but it removed only part of the content dropping.
+
+For the next report we plan three things. First, two more training seeds for the models in Table~\ref{tab:sft}. Second, a version of the last mixture that keeps all 2,000 ordinary pairs, to find out whether its security gain comes from the processing pairs or from having fewer ordinary pairs. Third, processing targets for everyday tasks, written by a larger model as in DRIP and checked by a second model, so that the processing target is trained on the same kind of task as the security examples.
+
+Several limitations apply to all of the results above. Each model was trained once, so the intervals reflect only the choice of test items; we plan two more seeds for the models in this report. The model is small and only 13 text operations passed the competence filter. In our prompt format the untrained model already resists most SecFid injections, so SecFid shows little difference in security between models, and SEP carries most of that comparison. SEP attack success is scored by looking for a keyword, and the 4\% to 17\% of SEP answers that reach the length limit may hide a late answer to the injected question. We did not test adaptive attacks~\cite{nasr}. Experiments~2 and~3, and the repetition of Experiment~1 with the SFT term, were added after we saw the first results. Finally, three other models from our original design are in the repository and are not discussed here: the processing target combined with fidelity pairs (best on SecFid without counting, but attacked on 46.6\% of SEP and badly broken on counting), the system--user version mentioned in Experiment~2, and a half-and-half model with fidelity pairs, which under plain DPO was no better than the standard recipe with fidelity pairs.
+
+\paragraph{Code and use of AI tools.} Code, data and all results are in our course repository (\texttt{docs/RESULTS.md}). We used Claude to help write code and run experiments.
+
+\begin{thebibliography}{99}\small
+\setlength{\itemsep}{1pt}
+\bibitem{struq} S.~Chen, J.~Piet, C.~Sitawarin, D.~Wagner. StruQ: Defending against prompt injection with structured queries. arXiv:2402.06363, 2024.
+\bibitem{ih} E.~Wallace et al. The instruction hierarchy: Training LLMs to prioritize privileged instructions. arXiv:2404.13208, 2024.
+\bibitem{secalign} S.~Chen et al. SecAlign: Defending against prompt injection with preference optimization. arXiv:2410.05451, 2024.
+\bibitem{metasecalign} S.~Chen et al. Meta SecAlign: A secure foundation LLM against prompt injection attacks. arXiv:2507.02735, 2025.
+\bibitem{secpo} S.~Chen et al. SecPO: Principled adversarial training for prompt injection security. arXiv:2610.41998, 2026.
+\bibitem{secfid} M.~Hermon et al. Security--fidelity tradeoffs: The hidden cost of prompt injection defense. ICML 2026; arXiv:2606.30783.
+\bibitem{goalgoal} Chen et al. Improving instruction hierarchy by learning from goal--goal conflicts. arXiv:2610.35093, 2026.
+\bibitem{drip} R.~Liu et al. DRIP: Defending prompt injection via token-wise representation editing and residual instruction fusion. arXiv:2511.00447, 2025.
+\bibitem{sep} E.~Zverev et al. Can LLMs separate instructions from data? And what do we even mean by that? ICLR 2025; arXiv:2403.06833.
+\bibitem{nasr} M.~Nasr et al. The attacker moves second: Stronger adaptive attacks bypass defenses against LLM jailbreaks and prompt injections. arXiv:2510.09023, 2025.
+\bibitem{ifeval} J.~Zhou et al. Instruction-following evaluation for large language models. arXiv:2311.07911, 2023.
+\bibitem{alpaca} R.~Taori et al. Stanford Alpaca: An instruction-following LLaMA model. 2023.
+\bibitem{qwen} Qwen Team. Qwen3.5-2B model card. Hugging Face, 2026.
+\bibitem{lora} E.~Hu et al. LoRA: Low-rank adaptation of large language models. ICLR 2022.
+\bibitem{dpo} R.~Rafailov et al. Direct preference optimization: Your language model is secretly a reward model. NeurIPS 2023.
+\bibitem{dpop} A.~Pal et al. Smaug: Fixing failure modes of preference optimisation with DPO-Positive. arXiv:2402.13228, 2024.
+\bibitem{rpo} R.~Y.~Pang et al. Iterative reasoning preference optimization. arXiv:2404.19733, 2024.
+\end{thebibliography}
+
+\end{document}

@@ -10,6 +10,8 @@ injected instruction as content, without obeying it, keeps security while droppi
 Base model: Qwen3.5-2B, LoRA + DPO, six training conditions. Main benchmark: SecFid; security
 benchmark: SEP.
 
+**Report V1 (Nov 23):** [`reports/report_v1/report_v1.pdf`](reports/report_v1/report_v1.pdf).
+
 ## Results so far (seed 0, one training run per condition)
 
 | Model | SecFid: injected sentence dropped (%) | SecFid: safe processing (%) | SEP: samples attacked (%) |
@@ -31,6 +33,23 @@ benchmark: SEP.
   drops content (23.2% vs 17.1% base) and C2 no longer repairs it (21.1%). These follow-ups are
   post hoc and single-run.
 
+With the added SFT term (DPO + SFT, weights 1:1; post hoc follow-ups, Nov 19 and Nov 23):
+
+| Model (DPO + SFT) | SecFid: injected sentence dropped (%) | SecFid: safe processing (%) | SEP: samples attacked (%) |
+|---|---|---|---|
+| C1 ignore-style + ordinary (standard recipe) | 23.2 | 66.6 | 22.1 |
+| C2 ignore-style + fidelity | 21.1 | 69.1 | 14.3 |
+| C3 process-style + ordinary | 7.4 | 85.5 | 76.7 |
+| C5 target control | 28.1 | 62.5 | 75.2 |
+| C7 half ignore-style, half process-style | 16.4 | 74.9 | 29.1 |
+| C9 all ignore-style pairs + process-style pairs | 19.4 | 71.9 | 15.4 |
+
+- Under this loss C3 vs C5 meets the pre-registered rule on point estimates (safe processing
+  +23.0 [+20.4, +25.6]; SEP +1.5 [-0.3, +3.1]; transfer -2.5 [-4.6, -0.4]), but both stay easy
+  to attack on SEP.
+- C9 is the most secure 2B model so far and processes more than C1, but removes only part of
+  C1's content dropping.
+
 Full tables, intervals and caveats: `docs/RESULTS.md`.
 
 ## Checkpoints
@@ -38,11 +57,12 @@ Full tables, intervals and caveats: `docs/RESULTS.md`.
 The trained LoRA adapters are attached to GitHub releases, not committed:
 [`checkpoints-seed0`](https://github.com/Charlie-Zhou-Xingyu/process-not-obey/releases/tag/checkpoints-seed0)
 holds the six study conditions and the ten follow-up runs of seed 0, one archive each, with
-SHA-256 checksums and instructions. Download one with
+SHA-256 checksums and instructions. The three anchored-loss runs of Nov 23 (C3, C5, C9) are not in the release yet. Download one with
 `gh release download checkpoints-seed0 -p 'C3_*'`.
 
 ## Documents
 
+- `reports/report_v1/` - Report V1 (LaTeX source and PDF).
 - `docs/RESULTS.md` - every measured result, with intervals and caveats.
 - `PLAN.md` - the working plan: status, schedule, commands, gates, open decisions.
 - `docs/WALKTHROUGH.md` - a guided tour of the code.
