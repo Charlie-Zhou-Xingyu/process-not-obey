@@ -15,3 +15,12 @@ wandb/
 third_party/
 server_results/
 merged/
+# LaTeX build files and the Chinese reading copy of the reports (the repository is English-only)
+reports/**/*.aux
+reports/**/*.log
+reports/**/*.out
+reports/**/*.fls
+reports/**/*.fdb_latexmk
+reports/**/*.xdv
+reports/**/*.synctex.gz
+reports/**/*_zh.*

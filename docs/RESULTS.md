@@ -740,3 +740,46 @@ to be tested mainly with SEP and the transfer attack.
   and C6 about 19 minutes each, C4 4 minutes; about 13 GB of GPU memory. Each batch is padded
   to its longest example, so any condition that includes long responses takes close to 20
   minutes.
+
+## 14. Anchored loss on C3 and C5, and C9 (seed 0, evening of Nov 23)
+
+Three more runs with the anchored loss (DPO + SFT, weights 1:1; same settings as sections 7 and
+10). The design was reviewed before launch, and the reading rules below were written down before
+training. C9 is new: the 2,000 ignore-style pairs of C1, the same 1,000 process-style pairs as C7,
+and 1,000 of the ordinary pairs that C1 and C7 share (4,000 pairs, 63 steps). Data and logs:
+`server_results/tonight_nov23/` (not in git).
+
+| DPO + SFT | base | C1 | C2 | C3 | C5 | C7 | C9 |
+|---|---|---|---|---|---|---|---|
+| SecFid ignored | 17.1 | 23.2 | 21.1 | 7.4 | 28.1 | 16.4 | 19.4 |
+| SecFid safe processing | 63.5 | 66.6 | 69.1 | 85.5 | 62.5 | 74.9 | 71.9 |
+| SecFid safe processing, no counting | 65.2 | 67.6 | 67.7 | 85.2 | 64.8 | 75.4 | 71.0 |
+| clean-input accuracy (counting) | 93.8 (87.9) | 90.7 (84.7) | 88.3 (74.3) | 90.5 (70.7) | 93.1 (88.3) | 90.4 (76.5) | 90.2 (79.5) |
+| SEP attack success | 92.0 | 22.1 | 14.3 | 76.7 | 75.2 | 29.1 | 15.4 |
+| transfer attack success | 39.6 | | | 32.4 | 34.8 | | |
+
+Differences (points, 95% paired item bootstrap, one seed):
+
+| comparison | safe processing | ignored | ignored, no counting | SEP | transfer |
+|---|---|---|---|---|---|
+| C3 − C5 | +23.0 [+20.4, +25.6] | −20.7 [−23.3, −18.2] | −17.7 [−20.6, −14.8] | +1.5 [−0.3, +3.1] | −2.5 [−4.6, −0.4] |
+| C5 − C1 | −4.1 [−6.5, −1.7] | +4.9 [+2.5, +7.3] | | +53.2 [+50.9, +55.5] | |
+| C9 − C1 | +5.3 [+3.4, +7.2] | −3.8 [−5.6, −2.1] | −2.1 [−4.0, −0.2] | −6.7 [−8.3, −5.0] | |
+| C9 − C7 | −3.0 [−4.7, −1.4] | +3.0 [+1.5, +4.5] | +4.2 [+2.4, +5.9] | −13.8 [−15.6, −11.9] | |
+
+- **The primary comparison under the anchored loss meets the pre-registered rule on point
+  estimates** (safe processing interval above zero; SEP and transfer each at most 2 points worse).
+  It does not meet the stricter reading that needs the whole SEP interval within 2 points (upper
+  bound 3.1). Relative to plain DPO, the SEP gap between C3 and C5 shrank by 8.9 points [6.7, 11.2]
+  (difference in differences). Counting every truncated SEP output as a hit gives 78.9 (C3) and
+  77.2 (C5).
+- **Both remain insecure in absolute terms** (SEP 76.7 and 75.2 against 22.1 for C1 with the same
+  loss): security pairs built from text operations still do not transfer to everyday tasks.
+- **C9 meets two of its three pre-set conditions against C1**: safe processing is higher and SEP
+  is lower (15.4%, the lowest of all 2B runs), but ignored without counting falls by only 2.1
+  points (the bar was 5). Against C7, the extra ignore-style pairs restore SEP security (−13.8)
+  and bring back some content dropping (+3.0). C9 replaced 1,000 ordinary pairs, so whether its
+  SEP gain comes from the process-style pairs or from fewer ordinary pairs is not separated. No
+  transfer result for C1/C7/C9 under this loss.
+- Training logs: C3 rewards/chosen ends near +0.4 (about +4 nats over the reference), unlike plain
+  DPO. All three runs log loss_type [sigmoid, sft], weights [1, 1], 63 steps, 4,000 rows.
