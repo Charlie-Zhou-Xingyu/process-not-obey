@@ -1,0 +1,12 @@
+{
+  "model": "base_qwen35_2b",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.3965,
+  "security": 0.6035,
+  "asr_refined": 0.3968586387434555,
+  "n_refined": 1910,
+  "asr_seed_template": 0.3888888888888889,
+  "n_seed_template": 90,
+  "truncated_outputs": 103
+}

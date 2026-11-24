@@ -1,0 +1,26 @@
+{
+  "model": "llama31_8b_instr_concat",
+  "benchmark": "secfid_clean",
+  "n": 1168,
+  "correct": 0.9426369863013698,
+  "executed_false_positive": 0.0059931506849315065,
+  "by_task": {
+    "counting": {
+      "correct": 0.8273615635179153,
+      "n": 307
+    },
+    "editing": {
+      "correct": 0.9706959706959707,
+      "n": 273
+    },
+    "extraction": {
+      "correct": 0.9806451612903225,
+      "n": 310
+    },
+    "translation": {
+      "correct": 1.0,
+      "n": 278
+    }
+  },
+  "truncated_outputs": 1
+}

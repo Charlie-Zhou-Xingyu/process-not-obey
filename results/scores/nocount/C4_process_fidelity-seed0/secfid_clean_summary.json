@@ -1,0 +1,26 @@
+{
+  "model": "C4_process_fidelity-seed0",
+  "benchmark": "secfid_clean",
+  "n": 1168,
+  "correct": 0.8758561643835616,
+  "executed_false_positive": 0.0059931506849315065,
+  "by_task": {
+    "counting": {
+      "correct": 0.5602605863192183,
+      "n": 307
+    },
+    "editing": {
+      "correct": 0.9743589743589743,
+      "n": 273
+    },
+    "extraction": {
+      "correct": 0.9903225806451613,
+      "n": 310
+    },
+    "translation": {
+      "correct": 1.0,
+      "n": 278
+    }
+  },
+  "truncated_outputs": 7
+}

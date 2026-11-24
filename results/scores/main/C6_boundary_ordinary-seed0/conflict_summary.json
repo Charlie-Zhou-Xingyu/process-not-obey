@@ -1,0 +1,27 @@
+{
+  "model": "C6_boundary_ordinary-seed0",
+  "benchmark": "conflict",
+  "n": 900,
+  "fidelity": {
+    "processed": 0.56,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.44,
+    "n": 300
+  },
+  "system_user": {
+    "processed": 0.6633333333333333,
+    "executed": 0.0,
+    "ignored": 0.01,
+    "other": 0.32666666666666666,
+    "n": 300
+  },
+  "user_data": {
+    "processed": 0.5366666666666666,
+    "executed": 0.0,
+    "ignored": 0.02666666666666667,
+    "other": 0.43666666666666665,
+    "n": 300
+  },
+  "truncated_outputs": 1
+}

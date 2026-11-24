@@ -1,0 +1,11 @@
+{
+  "model": "C2_ignore_fidelity-seed0",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.6118299445471349,
+  "prompt_loose": 0.6561922365988909,
+  "inst_strict": 0.7170263788968825,
+  "inst_loose": 0.7529976019184652,
+  "mean4": 0.6845115404903434,
+  "truncated_outputs": 68
+}

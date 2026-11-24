@@ -1,0 +1,27 @@
+{
+  "model": "C8_mix_fidelity-seed0",
+  "benchmark": "conflict",
+  "n": 900,
+  "fidelity": {
+    "processed": 0.8833333333333333,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.11666666666666667,
+    "n": 300
+  },
+  "system_user": {
+    "processed": 0.67,
+    "executed": 0.0,
+    "ignored": 0.01,
+    "other": 0.32,
+    "n": 300
+  },
+  "user_data": {
+    "processed": 0.8366666666666667,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.16333333333333333,
+    "n": 300
+  },
+  "truncated_outputs": 5
+}

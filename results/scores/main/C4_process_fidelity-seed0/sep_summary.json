@@ -1,0 +1,16 @@
+{
+  "model": "C4_process_fidelity-seed0",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.466,
+  "security": 0.534,
+  "asr_by_attack": {
+    "straightforward": 0.176,
+    "straightforward_before": 0.124,
+    "ignore": 0.1225,
+    "ignore_before": 0.1065,
+    "completion": 0.308,
+    "completion_ignore": 0.185
+  },
+  "truncated_outputs": 988
+}

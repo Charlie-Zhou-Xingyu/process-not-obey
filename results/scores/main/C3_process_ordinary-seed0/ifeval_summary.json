@@ -1,0 +1,11 @@
+{
+  "model": "C3_process_ordinary-seed0",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.634011090573013,
+  "prompt_loose": 0.6931608133086876,
+  "inst_strict": 0.7362110311750599,
+  "inst_loose": 0.7805755395683454,
+  "mean4": 0.7109896186562765,
+  "truncated_outputs": 66
+}

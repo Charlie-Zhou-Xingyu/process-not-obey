@@ -1,0 +1,11 @@
+{
+  "model": "llama31_8b_instr",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.7430683918669131,
+  "prompt_loose": 0.7911275415896488,
+  "inst_strict": 0.8201438848920863,
+  "inst_loose": 0.8537170263788969,
+  "mean4": 0.8020142111818863,
+  "truncated_outputs": 13
+}

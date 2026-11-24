@@ -1,0 +1,12 @@
+{
+  "model": "C1_ignore_ordinary-seed0",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.112,
+  "security": 0.888,
+  "asr_refined": 0.112565445026178,
+  "n_refined": 1910,
+  "asr_seed_template": 0.1,
+  "n_seed_template": 90,
+  "truncated_outputs": 169
+}

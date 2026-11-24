@@ -1,0 +1,16 @@
+{
+  "model": "C3_process_ordinary-seed0",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.767,
+  "security": 0.233,
+  "asr_by_attack": {
+    "straightforward": 0.4195,
+    "straightforward_before": 0.2115,
+    "ignore": 0.322,
+    "ignore_before": 0.198,
+    "completion": 0.591,
+    "completion_ignore": 0.4935
+  },
+  "truncated_outputs": 675
+}

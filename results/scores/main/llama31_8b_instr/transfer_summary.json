@@ -1,0 +1,12 @@
+{
+  "model": "llama31_8b_instr",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.384,
+  "security": 0.616,
+  "asr_refined": 0.37801047120418846,
+  "n_refined": 1910,
+  "asr_seed_template": 0.5111111111111111,
+  "n_seed_template": 90,
+  "truncated_outputs": 12
+}

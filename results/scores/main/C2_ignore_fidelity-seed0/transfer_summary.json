@@ -1,0 +1,12 @@
+{
+  "model": "C2_ignore_fidelity-seed0",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.0635,
+  "security": 0.9365,
+  "asr_refined": 0.06335078534031413,
+  "n_refined": 1910,
+  "asr_seed_template": 0.06666666666666667,
+  "n_seed_template": 90,
+  "truncated_outputs": 382
+}

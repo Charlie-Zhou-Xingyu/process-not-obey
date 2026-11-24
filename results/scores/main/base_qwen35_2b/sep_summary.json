@@ -1,0 +1,16 @@
+{
+  "model": "base_qwen35_2b",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.9195,
+  "security": 0.0805,
+  "asr_by_attack": {
+    "straightforward": 0.4835,
+    "straightforward_before": 0.229,
+    "ignore": 0.3875,
+    "ignore_before": 0.236,
+    "completion": 0.789,
+    "completion_ignore": 0.716
+  },
+  "truncated_outputs": 491
+}

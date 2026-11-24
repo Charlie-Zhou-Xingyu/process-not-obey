@@ -1,0 +1,16 @@
+{
+  "model": "C7_mix_ordinary-seed0",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.2915,
+  "security": 0.7085,
+  "asr_by_attack": {
+    "straightforward": 0.121,
+    "straightforward_before": 0.083,
+    "ignore": 0.1205,
+    "ignore_before": 0.0805,
+    "completion": 0.0965,
+    "completion_ignore": 0.077
+  },
+  "truncated_outputs": 1090
+}

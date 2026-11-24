@@ -1,0 +1,26 @@
+{
+  "model": "C3_process_ordinary-seed0",
+  "benchmark": "secfid_clean",
+  "n": 1168,
+  "correct": 0.8758561643835616,
+  "executed_false_positive": 0.007705479452054794,
+  "by_task": {
+    "counting": {
+      "correct": 0.5830618892508144,
+      "n": 307
+    },
+    "editing": {
+      "correct": 0.9597069597069597,
+      "n": 273
+    },
+    "extraction": {
+      "correct": 0.9806451612903225,
+      "n": 310
+    },
+    "translation": {
+      "correct": 1.0,
+      "n": 278
+    }
+  },
+  "truncated_outputs": 1
+}

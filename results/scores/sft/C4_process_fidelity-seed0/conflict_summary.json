@@ -1,0 +1,27 @@
+{
+  "model": "C4_process_fidelity-seed0",
+  "benchmark": "conflict",
+  "n": 900,
+  "fidelity": {
+    "processed": 0.9966666666666667,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.0033333333333333335,
+    "n": 300
+  },
+  "system_user": {
+    "processed": 0.9066666666666666,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.09333333333333334,
+    "n": 300
+  },
+  "user_data": {
+    "processed": 0.96,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.04,
+    "n": 300
+  },
+  "truncated_outputs": 1
+}

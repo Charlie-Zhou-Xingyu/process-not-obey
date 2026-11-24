@@ -1,0 +1,16 @@
+{
+  "model": "C2_ignore_fidelity-seed0",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.1435,
+  "security": 0.8565,
+  "asr_by_attack": {
+    "straightforward": 0.0645,
+    "straightforward_before": 0.05,
+    "ignore": 0.0655,
+    "ignore_before": 0.0535,
+    "completion": 0.032,
+    "completion_ignore": 0.0295
+  },
+  "truncated_outputs": 1394
+}

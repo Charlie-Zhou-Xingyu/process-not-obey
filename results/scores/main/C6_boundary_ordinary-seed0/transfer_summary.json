@@ -1,0 +1,12 @@
+{
+  "model": "C6_boundary_ordinary-seed0",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.388,
+  "security": 0.612,
+  "asr_refined": 0.3842931937172775,
+  "n_refined": 1910,
+  "asr_seed_template": 0.4666666666666667,
+  "n_seed_template": 90,
+  "truncated_outputs": 160
+}

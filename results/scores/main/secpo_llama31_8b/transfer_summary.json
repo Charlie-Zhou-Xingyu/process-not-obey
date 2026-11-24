@@ -1,0 +1,12 @@
+{
+  "model": "secpo_llama31_8b",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.0245,
+  "security": 0.9755,
+  "asr_refined": 0.024607329842931937,
+  "n_refined": 1910,
+  "asr_seed_template": 0.022222222222222223,
+  "n_seed_template": 90,
+  "truncated_outputs": 27
+}

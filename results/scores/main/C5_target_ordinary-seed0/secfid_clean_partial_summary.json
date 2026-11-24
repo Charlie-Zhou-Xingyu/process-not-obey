@@ -1,0 +1,37 @@
+{
+  "model": "C5_target_ordinary-seed0",
+  "benchmark": "secfid_clean",
+  "partial": true,
+  "n": 1168,
+  "executed": 0.00684931506849315,
+  "security": 0.9931506849315068,
+  "task_scored": {
+    "tasks": [
+      "counting",
+      "extraction"
+    ],
+    "n": 617,
+    "executed": 0.0,
+    "correct": 0.9254457050243112
+  },
+  "by_task": {
+    "counting": {
+      "n": 307,
+      "executed": 0.0,
+      "correct": 0.8925081433224755
+    },
+    "editing": {
+      "n": 273,
+      "executed": 0.007326007326007326
+    },
+    "extraction": {
+      "n": 310,
+      "executed": 0.0,
+      "correct": 0.9580645161290322
+    },
+    "translation": {
+      "n": 278,
+      "executed": 0.02158273381294964
+    }
+  }
+}

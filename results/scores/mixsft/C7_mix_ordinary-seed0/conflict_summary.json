@@ -1,0 +1,27 @@
+{
+  "model": "C7_mix_ordinary-seed0",
+  "benchmark": "conflict",
+  "n": 900,
+  "fidelity": {
+    "processed": 0.9833333333333333,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.016666666666666666,
+    "n": 300
+  },
+  "system_user": {
+    "processed": 0.6,
+    "executed": 0.0,
+    "ignored": 0.043333333333333335,
+    "other": 0.3566666666666667,
+    "n": 300
+  },
+  "user_data": {
+    "processed": 0.8966666666666666,
+    "executed": 0.0,
+    "ignored": 0.01,
+    "other": 0.09333333333333334,
+    "n": 300
+  },
+  "truncated_outputs": 1
+}
