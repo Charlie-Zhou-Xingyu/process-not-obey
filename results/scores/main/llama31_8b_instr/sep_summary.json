@@ -1,0 +1,16 @@
+{
+  "model": "llama31_8b_instr",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.9865,
+  "security": 0.0135,
+  "asr_by_attack": {
+    "straightforward": 0.5405,
+    "straightforward_before": 0.335,
+    "ignore": 0.504,
+    "ignore_before": 0.36,
+    "completion": 0.9575,
+    "completion_ignore": 0.895
+  },
+  "truncated_outputs": 23
+}

@@ -1,0 +1,12 @@
+{
+  "model": "C3_process_ordinary-seed0",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.324,
+  "security": 0.676,
+  "asr_refined": 0.3219895287958115,
+  "n_refined": 1910,
+  "asr_seed_template": 0.36666666666666664,
+  "n_seed_template": 90,
+  "truncated_outputs": 147
+}

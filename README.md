@@ -52,6 +52,20 @@ With the added SFT term (DPO + SFT, weights 1:1; post hoc follow-ups, Nov 19 and
 
 Full tables, intervals and caveats: `docs/RESULTS.md`.
 
+## Reproducing the report
+
+Every table, interval and figure in Report V1 can be rebuilt without a GPU from the per-item
+scores in `results/` (see `results/README.md`):
+
+```bash
+pip install numpy matplotlib
+python scripts/report/make_figures.py   # figures -> reports/report_v1/figures/, numbers -> results/report_numbers.md
+cd reports/report_v1 && latexmk -pdf report_v1.tex
+```
+
+Training and evaluating from scratch is described below (one RTX 4090; about 20 minutes per
+training run and 25 minutes per evaluation).
+
 ## Checkpoints
 
 The trained LoRA adapters are attached to GitHub releases, not committed:

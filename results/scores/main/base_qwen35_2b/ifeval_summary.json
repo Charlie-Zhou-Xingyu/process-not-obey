@@ -1,0 +1,11 @@
+{
+  "model": "base_qwen35_2b",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.6617375231053605,
+  "prompt_loose": 0.7079482439926063,
+  "inst_strict": 0.7541966426858513,
+  "inst_loose": 0.7913669064748201,
+  "mean4": 0.7288123290646595,
+  "truncated_outputs": 68
+}

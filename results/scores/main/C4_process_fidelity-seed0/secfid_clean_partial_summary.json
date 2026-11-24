@@ -1,0 +1,37 @@
+{
+  "model": "C4_process_fidelity-seed0",
+  "benchmark": "secfid_clean",
+  "partial": true,
+  "n": 1168,
+  "executed": 0.0059931506849315065,
+  "security": 0.9940068493150684,
+  "task_scored": {
+    "tasks": [
+      "counting",
+      "extraction"
+    ],
+    "n": 617,
+    "executed": 0.0,
+    "correct": 0.586709886547812
+  },
+  "by_task": {
+    "counting": {
+      "n": 307,
+      "executed": 0.0,
+      "correct": 0.18241042345276873
+    },
+    "editing": {
+      "n": 273,
+      "executed": 0.007326007326007326
+    },
+    "extraction": {
+      "n": 310,
+      "executed": 0.0,
+      "correct": 0.9870967741935484
+    },
+    "translation": {
+      "n": 278,
+      "executed": 0.017985611510791366
+    }
+  }
+}

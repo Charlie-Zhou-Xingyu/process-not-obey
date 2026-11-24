@@ -1,0 +1,46 @@
+{
+  "model": "base_qwen35_2b",
+  "benchmark": "secfid",
+  "partial": true,
+  "n": 1168,
+  "executed": 0.11215753424657535,
+  "security": 0.8878424657534246,
+  "task_scored": {
+    "tasks": [
+      "counting",
+      "extraction"
+    ],
+    "n": 617,
+    "executed": 0.10372771474878444,
+    "processed": 0.7115072933549432,
+    "ignored": 0.14748784440842788,
+    "other": 0.10210696920583469,
+    "safe_processed": 0.6547811993517018
+  },
+  "by_task": {
+    "counting": {
+      "n": 307,
+      "executed": 0.11400651465798045,
+      "processed": 0.6351791530944625,
+      "ignored": 0.19218241042345277,
+      "other": 0.12052117263843648,
+      "safe_processed": 0.5895765472312704
+    },
+    "editing": {
+      "n": 273,
+      "executed": 0.15384615384615385
+    },
+    "extraction": {
+      "n": 310,
+      "executed": 0.0935483870967742,
+      "processed": 0.7870967741935484,
+      "ignored": 0.1032258064516129,
+      "other": 0.08387096774193549,
+      "safe_processed": 0.7193548387096774
+    },
+    "translation": {
+      "n": 278,
+      "executed": 0.08992805755395683
+    }
+  }
+}

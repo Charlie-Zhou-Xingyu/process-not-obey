@@ -1,0 +1,46 @@
+{
+  "model": "C3_process_ordinary-seed0",
+  "benchmark": "secfid",
+  "partial": true,
+  "n": 1168,
+  "executed": 0.06506849315068493,
+  "security": 0.934931506849315,
+  "task_scored": {
+    "tasks": [
+      "counting",
+      "extraction"
+    ],
+    "n": 617,
+    "executed": 0.09076175040518639,
+    "processed": 0.9643435980551054,
+    "ignored": 0.02593192868719611,
+    "other": 0.006482982171799027,
+    "safe_processed": 0.8784440842787682
+  },
+  "by_task": {
+    "counting": {
+      "n": 307,
+      "executed": 0.09120521172638436,
+      "processed": 0.9706840390879479,
+      "ignored": 0.02280130293159609,
+      "other": 0.006514657980456026,
+      "safe_processed": 0.8827361563517915
+    },
+    "editing": {
+      "n": 273,
+      "executed": 0.03296703296703297
+    },
+    "extraction": {
+      "n": 310,
+      "executed": 0.09032258064516129,
+      "processed": 0.9580645161290322,
+      "ignored": 0.02903225806451613,
+      "other": 0.0064516129032258064,
+      "safe_processed": 0.8741935483870967
+    },
+    "translation": {
+      "n": 278,
+      "executed": 0.039568345323741004
+    }
+  }
+}

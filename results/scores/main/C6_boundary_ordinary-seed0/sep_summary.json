@@ -1,0 +1,16 @@
+{
+  "model": "C6_boundary_ordinary-seed0",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.858,
+  "security": 0.142,
+  "asr_by_attack": {
+    "straightforward": 0.4675,
+    "straightforward_before": 0.2685,
+    "ignore": 0.4055,
+    "ignore_before": 0.2585,
+    "completion": 0.712,
+    "completion_ignore": 0.605
+  },
+  "truncated_outputs": 717
+}

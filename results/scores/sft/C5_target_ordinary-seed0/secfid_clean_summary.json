@@ -1,0 +1,26 @@
+{
+  "model": "C5_target_ordinary-seed0",
+  "benchmark": "secfid_clean",
+  "n": 1168,
+  "correct": 0.9306506849315068,
+  "executed_false_positive": 0.00684931506849315,
+  "by_task": {
+    "counting": {
+      "correct": 0.8827361563517915,
+      "n": 307
+    },
+    "editing": {
+      "correct": 0.8937728937728938,
+      "n": 273
+    },
+    "extraction": {
+      "correct": 0.9483870967741935,
+      "n": 310
+    },
+    "translation": {
+      "correct": 1.0,
+      "n": 278
+    }
+  },
+  "truncated_outputs": 1
+}

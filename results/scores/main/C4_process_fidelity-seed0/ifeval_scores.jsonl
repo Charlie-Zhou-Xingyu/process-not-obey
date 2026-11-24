@@ -1,0 +1,541 @@
+{"id": "ifeval-1000", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 1.0, 0.0], "inst_loose": [1.0, 1.0, 0.0]}
+{"id": "ifeval-1001", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1005", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1012", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1019", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-102", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1021", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1040", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-1051", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-1069", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 0.0], "inst_loose": [1.0, 0.0, 0.0]}
+{"id": "ifeval-1072", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1075", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1082", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1087", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1092", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1094", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-1098", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1107", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1108", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1122", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1127", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1128", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1129", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1130", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1131", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1132", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1137", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1139", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1147", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-1148", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1153", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1154", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1162", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1174", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-1180", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1187", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1203", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1216", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1217", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1219", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-122", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1220", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1233", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1236", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1237", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1242", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1246", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1248", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1251", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1258", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1259", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1262", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1265", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1268", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-127", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1281", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1286", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1287", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-13", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1300", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-1305", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1307", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1314", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1322", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1325", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1332", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1342", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 0.0]}
+{"id": "ifeval-1348", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-136", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1361", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1367", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1372", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1375", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1377", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1379", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-1381", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1389", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1392", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 0.0], "inst_loose": [1.0, 1.0, 0.0]}
+{"id": "ifeval-1393", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1402", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1418", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-142", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-143", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1436", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1446", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1466", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1476", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1477", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1480", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1481", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1498", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1508", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1512", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1516", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1518", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-152", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1531", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1535", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1537", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1546", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1548", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1551", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1561", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1566", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1571", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-1580", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-1582", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-1591", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1592", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1593", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-16", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1601", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1609", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1619", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1620", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1627", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-1629", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-163", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1634", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-164", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-1643", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1644", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1645", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1646", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1653", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1656", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1658", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1659", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1667", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-167", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1670", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-1675", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-168", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1686", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1691", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1705", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1713", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1730", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1733", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1738", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1739", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1746", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1759", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1773", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1776", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1779", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1781", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-179", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1793", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1800", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1802", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-181", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1813", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-1823", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1825", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-1834", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1837", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1843", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1845", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1857", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1858", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1879", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1880", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1883", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1886", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1893", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1897", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-19", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1902", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1906", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1908", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 1.0, 0.0], "inst_loose": [1.0, 1.0, 0.0]}
+{"id": "ifeval-1922", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1927", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1928", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-1934", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1936", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1939", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-1943", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-1944", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1954", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1964", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-1967", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-1980", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-1996", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-1999", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-201", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2010", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2015", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-202", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2023", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2028", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2034", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2035", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-2041", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2063", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-2069", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2070", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2071", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2078", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2084", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-209", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2097", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2100", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2107", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2118", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2136", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2139", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2142", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2143", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2162", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2164", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2169", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-218", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2180", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-219", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2192", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2195", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2207", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2209", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2215", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2216", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-2225", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2229", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2230", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2239", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2243", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2245", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2246", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2247", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2250", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2253", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2265", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2266", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2268", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-227", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2273", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2275", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 0.0]}
+{"id": "ifeval-2284", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2292", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2299", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2303", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2304", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2305", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2309", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2311", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2314", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2323", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2324", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2328", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-2337", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-2341", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2350", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2355", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2357", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2359", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2362", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2372", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2374", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2380", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2381", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2383", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2386", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2391", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2392", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2395", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2396", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2398", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-24", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-240", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2404", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2416", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2417", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2422", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-2432", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2436", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2439", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 0.0], "inst_loose": [1.0, 0.0, 0.0]}
+{"id": "ifeval-2441", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2447", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2449", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2457", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2464", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2465", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2467", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-247", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2471", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2475", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2482", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2485", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2497", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2505", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-251", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2515", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2517", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2531", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2532", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2534", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2549", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2563", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2567", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2571", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 0.0]}
+{"id": "ifeval-2577", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2583", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2585", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2589", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2590", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2591", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2596", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-260", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2602", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2605", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2616", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2617", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2622", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2628", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2637", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2649", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2653", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2662", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2667", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2674", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2677", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2683", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2685", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2691", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2704", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2713", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2716", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2724", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2728", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2736", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2739", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-2749", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2751", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2752", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2759", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2765", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-2768", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2779", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2780", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2785", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-2787", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-279", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-2790", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2798", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2801", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2807", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-281", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2811", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2817", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2820", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2825", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2828", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2829", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2832", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2844", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2849", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2853", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2857", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-2859", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-286", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2870", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2871", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-288", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2880", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2887", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2889", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2904", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2905", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-2908", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2909", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-2912", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-2918", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-292", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2921", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2925", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2929", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2941", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2943", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 1.0, 0.0], "inst_loose": [1.0, 1.0, 0.0]}
+{"id": "ifeval-295", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2957", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-296", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-2969", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2977", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-2985", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-2997", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-30", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 0.0]}
+{"id": "ifeval-3001", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-301", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3025", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3035", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3041", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3048", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3057", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3063", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3069", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-3071", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3073", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3079", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3081", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3084", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-3089", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 1.0, 0.0], "inst_loose": [1.0, 1.0, 0.0]}
+{"id": "ifeval-3091", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3098", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0, 1.0], "inst_loose": [0.0, 0.0, 1.0]}
+{"id": "ifeval-3109", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3112", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0], "inst_loose": [1.0]}
+{"id": "ifeval-3114", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-3126", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3130", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3131", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3150", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3156", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3166", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3186", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3188", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 0.0]}
+{"id": "ifeval-3191", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3195", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-3198", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-32", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3203", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3204", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-321", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-322", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3221", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3223", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3224", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3241", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3243", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3245", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3256", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-3263", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3272", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-3276", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-3280", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3281", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3287", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3294", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3305", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-331", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3311", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-3315", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-332", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-3323", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3324", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3326", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-3327", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 1.0, 0.0], "inst_loose": [1.0, 1.0, 0.0]}
+{"id": "ifeval-3329", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3335", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-334", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3345", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 0.0], "inst_loose": [1.0, 0.0, 0.0]}
+{"id": "ifeval-3350", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-3351", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3362", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-3367", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3369", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-337", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3371", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-3376", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3380", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3386", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-340", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-3401", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3407", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3409", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3414", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3415", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 0.0], "inst_loose": [0.0, 1.0, 0.0]}
+{"id": "ifeval-3424", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3425", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3428", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3429", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-343", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3434", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3439", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3442", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3445", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3453", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3455", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3456", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-3478", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3479", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3484", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-349", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3494", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3502", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3505", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0], "inst_loose": [1.0, 0.0]}
+{"id": "ifeval-3506", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-3513", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3518", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3534", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-3536", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3538", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3540", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3549", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3557", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3563", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3565", "prompt_strict": 0.0, "prompt_loose": 1.0, "inst_strict": [0.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3567", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3569", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-357", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3572", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3595", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3606", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3608", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3615", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3617", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3619", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3623", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3624", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3629", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3631", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3633", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-3644", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-3653", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3669", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3672", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-3680", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3682", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3690", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3691", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0], "inst_loose": [0.0, 1.0]}
+{"id": "ifeval-3697", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3703", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3709", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-371", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3710", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0, 1.0], "inst_loose": [1.0, 1.0, 1.0]}
+{"id": "ifeval-3718", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [1.0, 0.0, 1.0], "inst_loose": [1.0, 0.0, 1.0]}
+{"id": "ifeval-3719", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3724", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 1.0, 1.0], "inst_loose": [0.0, 1.0, 1.0]}
+{"id": "ifeval-3732", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3739", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0], "inst_loose": [0.0]}
+{"id": "ifeval-374", "prompt_strict": 0.0, "prompt_loose": 0.0, "inst_strict": [0.0, 0.0], "inst_loose": [0.0, 0.0]}
+{"id": "ifeval-3743", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3744", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3748", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0, 1.0], "inst_loose": [1.0, 1.0]}
+{"id": "ifeval-3749", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3750", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3751", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3752", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3753", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3754", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3755", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3756", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}
+{"id": "ifeval-3757", "prompt_strict": 1.0, "prompt_loose": 1.0, "inst_strict": [1.0], "inst_loose": [1.0]}

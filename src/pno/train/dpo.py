@@ -67,6 +67,27 @@ def loss_spec(cfg: dict) -> tuple[list[str], list[float] | None]:
     return types, weights
 
 
+def _component_eval_trainer():
+    """A DPOTrainer whose evaluate() reports the DPO loss and the SFT loss (per-token negative
+    log-likelihood of the preferred response) separately, whatever loss is being trained.
+    TRL's own evaluate() reports only the weighted sum of the configured losses."""
+    from trl import DPOTrainer
+
+    class _ComponentEvalDPOTrainer(DPOTrainer):
+        def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
+            saved = (self.loss_types, self.loss_weights)
+            out = {}
+            try:
+                for name, tag in (("sigmoid", "dpo"), ("sft", "nll")):
+                    self.loss_types, self.loss_weights = [name], [1.0]
+                    out.update(super().evaluate(eval_dataset, ignore_keys, f"{metric_key_prefix}_{tag}"))
+            finally:
+                self.loss_types, self.loss_weights = saved
+            return out
+
+    return _ComponentEvalDPOTrainer
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--train", required=True)
@@ -79,6 +100,9 @@ def main(argv=None):
     ap.add_argument("--max_steps", type=int, default=None, help="override (smoke tests)")
     ap.add_argument("--limit", type=int, default=None, help="use only the first N rows (smoke tests)")
     ap.add_argument("--batch_size", type=int, default=None, help="override per-device batch (smoke tests)")
+    ap.add_argument("--eval", default=None,
+                    help="held-out pairs (jsonl, same format as --train); enables validation losses")
+    ap.add_argument("--eval_steps", type=int, default=8, help="evaluate every N optimizer steps (with --eval)")
     args = ap.parse_args(argv)
 
     import torch
@@ -148,9 +172,16 @@ def main(argv=None):
         report_to=cfg.get("report_to") or "none",
         dataloader_num_workers=0,
         use_cpu=(device == "cpu"),
+        # eval_on_start: step 0 is the untrained model; the Trainer also evaluates at the last step
+        **({"eval_strategy": "steps", "eval_steps": args.eval_steps, "eval_on_start": True,
+            "per_device_eval_batch_size": per_device} if args.eval else {}),
     )
-    trainer = DPOTrainer(model=model, args=dpo_args, train_dataset=ds, processing_class=tok,
-                         peft_config=lora)
+    eval_ds = None
+    if args.eval:
+        eval_ds = build_hf_dataset(read_jsonl(args.eval), args.renderer, tok)
+    trainer_cls = _component_eval_trainer() if eval_ds is not None else DPOTrainer
+    trainer = trainer_cls(model=model, args=dpo_args, train_dataset=ds, eval_dataset=eval_ds,
+                          processing_class=tok, peft_config=lora)
     t0 = time.time()
     result = trainer.train()
     elapsed = time.time() - t0
@@ -164,6 +195,7 @@ def main(argv=None):
         "effective_batch": eff,
         "n_rows": len(rows), "n_after_prepare": len(trainer.train_dataset), "seconds": elapsed,
         "train_metrics": result.metrics, "log_history": trainer.state.log_history,
+        "eval_file": args.eval, "eval_sha256": hashlib.sha256(Path(args.eval).read_bytes()).hexdigest() if args.eval else None,
     })
     print(json.dumps({"out": str(out), "seconds": round(elapsed, 1), **result.metrics}, indent=1))
 

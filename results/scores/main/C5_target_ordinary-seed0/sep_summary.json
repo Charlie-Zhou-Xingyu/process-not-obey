@@ -1,0 +1,16 @@
+{
+  "model": "C5_target_ordinary-seed0",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.726,
+  "security": 0.274,
+  "asr_by_attack": {
+    "straightforward": 0.414,
+    "straightforward_before": 0.2,
+    "ignore": 0.334,
+    "ignore_before": 0.1785,
+    "completion": 0.509,
+    "completion_ignore": 0.4005
+  },
+  "truncated_outputs": 568
+}

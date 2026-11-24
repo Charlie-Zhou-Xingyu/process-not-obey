@@ -1,0 +1,12 @@
+{
+  "model": "C4_process_fidelity-seed0",
+  "benchmark": "transfer",
+  "n": 2000,
+  "asr": 0.1305,
+  "security": 0.8695,
+  "asr_refined": 0.13089005235602094,
+  "n_refined": 1910,
+  "asr_seed_template": 0.12222222222222222,
+  "n_seed_template": 90,
+  "truncated_outputs": 201
+}

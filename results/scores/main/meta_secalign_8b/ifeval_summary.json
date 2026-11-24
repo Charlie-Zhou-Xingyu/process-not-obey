@@ -1,0 +1,11 @@
+{
+  "model": "meta_secalign_8b",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.7356746765249538,
+  "prompt_loose": 0.7966728280961183,
+  "inst_strict": 0.8189448441247003,
+  "inst_loose": 0.8645083932853717,
+  "mean4": 0.803950185507786,
+  "truncated_outputs": 10
+}

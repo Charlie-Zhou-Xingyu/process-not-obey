@@ -1,0 +1,11 @@
+{
+  "model": "C4_process_fidelity-seed0",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.5933456561922366,
+  "prompt_loose": 0.6395563770794824,
+  "inst_strict": 0.697841726618705,
+  "inst_loose": 0.7314148681055156,
+  "mean4": 0.6655396569989849,
+  "truncated_outputs": 166
+}

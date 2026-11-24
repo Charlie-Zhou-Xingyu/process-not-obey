@@ -1,0 +1,11 @@
+{
+  "model": "secpo_llama31_8b",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.6414048059149723,
+  "prompt_loose": 0.6987060998151571,
+  "inst_strict": 0.7218225419664268,
+  "inst_loose": 0.7709832134292566,
+  "mean4": 0.7082291652814532,
+  "truncated_outputs": 13
+}

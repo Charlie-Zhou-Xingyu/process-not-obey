@@ -1,0 +1,16 @@
+{
+  "model": "secpo_llama31_8b",
+  "benchmark": "sep",
+  "n": 2000,
+  "asr": 0.0745,
+  "security": 0.9255,
+  "asr_by_attack": {
+    "straightforward": 0.026,
+    "straightforward_before": 0.0485,
+    "ignore": 0.026,
+    "ignore_before": 0.032,
+    "completion": 0.02,
+    "completion_ignore": 0.022
+  },
+  "truncated_outputs": 228
+}

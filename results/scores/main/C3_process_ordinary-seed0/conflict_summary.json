@@ -1,0 +1,27 @@
+{
+  "model": "C3_process_ordinary-seed0",
+  "benchmark": "conflict",
+  "n": 900,
+  "fidelity": {
+    "processed": 0.85,
+    "executed": 0.0,
+    "ignored": 0.0,
+    "other": 0.15,
+    "n": 300
+  },
+  "system_user": {
+    "processed": 0.31,
+    "executed": 0.0,
+    "ignored": 0.05333333333333334,
+    "other": 0.6366666666666667,
+    "n": 300
+  },
+  "user_data": {
+    "processed": 0.79,
+    "executed": 0.0,
+    "ignored": 0.013333333333333334,
+    "other": 0.19666666666666666,
+    "n": 300
+  },
+  "truncated_outputs": 6
+}

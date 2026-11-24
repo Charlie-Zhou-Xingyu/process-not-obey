@@ -1,0 +1,27 @@
+{
+  "model": "base_qwen35_2b",
+  "benchmark": "conflict",
+  "n": 900,
+  "fidelity": {
+    "processed": 0.81,
+    "executed": 0.0,
+    "ignored": 0.016666666666666666,
+    "other": 0.17333333333333334,
+    "n": 300
+  },
+  "system_user": {
+    "processed": 0.27,
+    "executed": 0.05,
+    "ignored": 0.06666666666666667,
+    "other": 0.6133333333333333,
+    "n": 300
+  },
+  "user_data": {
+    "processed": 0.3333333333333333,
+    "executed": 0.05,
+    "ignored": 0.11666666666666667,
+    "other": 0.5,
+    "n": 300
+  },
+  "truncated_outputs": 5
+}

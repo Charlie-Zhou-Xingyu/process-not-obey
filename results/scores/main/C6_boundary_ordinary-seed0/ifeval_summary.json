@@ -1,0 +1,11 @@
+{
+  "model": "C6_boundary_ordinary-seed0",
+  "benchmark": "ifeval",
+  "n": 541,
+  "prompt_strict": 0.6506469500924215,
+  "prompt_loose": 0.6950092421441775,
+  "inst_strict": 0.750599520383693,
+  "inst_loose": 0.7865707434052758,
+  "mean4": 0.7207066140063919,
+  "truncated_outputs": 58
+}

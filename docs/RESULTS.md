@@ -783,3 +783,21 @@ Differences (points, 95% paired item bootstrap, one seed):
   transfer result for C1/C7/C9 under this loss.
 - Training logs: C3 rewards/chosen ends near +0.4 (about +4 nats over the reference), unlike plain
   DPO. All three runs log loss_type [sigmoid, sft], weights [1, 1], 63 steps, 4,000 rows.
+
+## 15. Held-out validation losses (seed 0, night of Nov 23)
+
+C3 was retrained twice with the same seed and data, once with plain DPO and once with DPO + SFT,
+with both losses measured on 128 held-out pairs (64 security, 64 ordinary) from the seed-1 data,
+excluding every prompt of the seed-0 training files (`scripts/report/make_val_pairs.py`), at
+step 0, every 16 steps and at step 63 (`--eval`, `--eval_steps` in `pno.train.dpo`). The reruns
+reproduce the logged training curves of the original runs (same last-10-step averages).
+
+| held-out | step 0 | step 63, DPO | step 63, DPO + SFT |
+|---|---|---|---|
+| DPO loss | 0.693 | 0.004 | 0.008 |
+| SFT loss (nats per token, preferred response) | 0.505 | 0.483 | 0.453 |
+| preferred log-prob change vs reference (nats) | 0 | +0.1 | +4.7 |
+| rejected log-prob change vs reference (nats) | 0 | -104.7 | -76.6 |
+
+Held-out and training values agree at the end of training: no sign of overfitting. Logs:
+`results/train_logs/valcurves/`. The same reruns for C5 are not done yet.

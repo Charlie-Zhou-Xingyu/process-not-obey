@@ -25,6 +25,7 @@ train = [
 ]
 eval = ["lm-eval[ifeval]>=0.4.8", "pandas"]
 dev = ["pytest"]
+report = ["numpy", "matplotlib"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
