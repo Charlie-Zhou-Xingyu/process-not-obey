@@ -3,7 +3,7 @@
 Detailed results have moved to [`docs/RESULTS.md`](docs/RESULTS.md). Section numbers below are
 unchanged; section 7 now only points there.
 
-Updated 2026-11-19. Matches Proposal v4. The code walkthrough is in `docs/WALKTHROUGH.md`, the
+Updated 2026-11-23. Matches Proposal v4. Report V1 is in [`reports/report_v1/`](reports/report_v1/). The code walkthrough is in `docs/WALKTHROUGH.md`, the
 sources of each setting are in `docs/DESIGN.md`, and every number used by the code is in
 `configs/experiment.yaml`.
 
@@ -92,6 +92,14 @@ each, 3 random seeds, 18 training runs in all), then compared on the same benchm
      with the anchored loss, evaluated on SecFid, SEP and held-out conflicts. It could be
      cancelled by `touch /workspace/process-not-obey/.skip_sft2` on the server before it
      started.
+  9. `tonight` (Nov 23, 19:27-21:44 PST, after a restart of the same instance): C3 and C5
+     retrained with the anchored loss in `/workspace/pno-sft`, evaluated on SecFid, SecFid
+     clean inputs, SEP and transfer; and the new C9 (all 2,000 ignore-style pairs of C1, the
+     1,000 process-style pairs of C7, 1,000 of the ordinary pairs C1 and C7 share; 4,000 pairs)
+     in `/workspace/pno-mixsft`, evaluated on SecFid, SecFid clean inputs and SEP. The design
+     and the reading rules were fixed before launch (RESULTS.md section 14). Outputs, logs and
+     adapters are in `server_results/` (`tonight_nov23/`, `variants/*/runs/`); the instance
+     was stopped again from the console at about 21:52 PST.
 - Verbatim copies of these scripts are in `scripts/server/`.
 - After the queue finished (Nov 19, 09:36 PST), results were copied to the local
   `server_results/` (5.4 GB, not in git); all 668 files passed a per-file sha256 check. The
@@ -118,8 +126,18 @@ fails (transfer, −3.5, interval [−5.5, −1.4]). `outputs/report/hypothesis.
 supported: false. The follow-up runs (diagnostics, C7/C8, anchored loss) are summarized in
 `docs/RESULTS.md`, Key findings.
 
-**Not done yet:** the other two seeds; the training run that separates the SEP cost of C7 from
-the halving of ignore-style pairs.
+**With the anchored loss (DPO + SFT, a post hoc follow-up, Nov 23):** C3 − C5 safe processing
++23.0 [+20.4, +25.6], SEP +1.5 [−0.3, +3.1], transfer −2.5 [−4.6, −0.4], so the rule holds on
+point estimates but not on the stricter interval reading for SEP. Both models are still attacked
+on about 75% of SEP. C9 lowers SEP to 15.4% (C1 22.1%) and raises safe processing by 5.3, but
+cuts dropping without counting by only 2.1 points (the bar was 5). Details: `docs/RESULTS.md`
+section 14.
+
+**Not done yet:** the other two seeds (priority: the anchored-loss models of RESULTS.md section
+14); a C9 variant that keeps all 2,000 ordinary pairs, to tell whether C9's SEP gain comes from
+the process-style pairs or from fewer ordinary pairs; transfer results for C1, C7 and C9 under
+the anchored loss; process-style targets for everyday tasks written by a larger model and
+checked by a second one (as in DRIP).
 
 **Timeline**
 
@@ -127,7 +145,7 @@ the halving of ignore-style pairs.
 |---|---|---|
 | Nov 15 | four gate checks done | the server only arrived Nov 18. Gates 0, 1, 3, 4 done that evening (3 and 4 not met); gate 2 ran that night |
 | Nov 20 (Fri) | six conditions x 1 seed, meeting | seed-0 training and evaluation done Nov 18-19 |
-| Nov 23 (Mon) | Report V1 | on schedule |
+| Nov 23 (Mon) | Report V1 | done: `reports/report_v1/`, plus three anchored-loss runs the same evening |
 | Dec 7 (Mon) | remaining seeds, error analysis, Report V2 | on schedule |
 | Dec 12 (Sat) | final paper, code, checkpoints | on schedule |
 
